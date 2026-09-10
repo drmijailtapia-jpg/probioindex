@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Base clínica independiente de evidencia sobre probióticos, organizada por cepa exacta, indicación y población adulta o pediátrica.">
+  <meta name="theme-color" content="#f5fbfa">
+  <title>ProbioIndex — Evidencia por cepa</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="ProbioIndex, inicio">
+      <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span>ProbioIndex</span>
+      <small>v0.6 clínica</small>
+    </a>
+    <nav class="top-actions" aria-label="Navegación principal">
+      <button class="access-button" id="accessButton">Acceso</button>
+      <button class="text-button" id="methodButton">Metodología</button>
+      <button class="language-button" id="languageButton" aria-label="Cambiar idioma">English</button>
+      <button class="icon-button" id="safetyButton" aria-label="Abrir seguridad clínica">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4.8 6v5.4c0 4.6 3 8.3 7.2 9.6 4.2-1.3 7.2-5 7.2-9.6V6L12 3Z"/><path d="M9.2 12.1 11 14l3.9-4.1"/></svg>
+      </button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="search-stage" aria-labelledby="mainTitle">
+      <h1 id="mainTitle">Probióticos y alimentos funcionales, con la evidencia en contexto.</h1>
+      <p class="lede">Encuentra la cepa estudiada para cada condición, revisa las indicaciones asociadas a una cepa o explora los posibles beneficios de alimentos funcionales.</p>
+
+      <div class="search-shell">
+        <div class="mode-switch" role="tablist" aria-label="Tipo de búsqueda">
+          <button role="tab" aria-selected="true" class="active" data-mode="condition">Condición → cepa</button>
+          <button role="tab" aria-selected="false" data-mode="strain">Cepa → condición</button>
+          <button role="tab" aria-selected="false" data-mode="foods">Alimentos funcionales</button>
+        </div>
+        <label class="search-field">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.7"/><path d="m16 16 4 4"/></svg>
+          <input id="searchInput" type="search" autocomplete="off" placeholder="Busca SII, pouchitis, vaginosis…" aria-label="Buscar evidencia clínica">
+          <kbd>⌘ K</kbd>
+        </label>
+        <p class="last-updated">Última actualización: <time datetime="2026-09-06">06 sep 2026</time></p>
+        <div class="suggestions" id="suggestions" aria-label="Sugerencias de búsqueda"></div>
+      </div>
+
+      <div class="quick-links" aria-label="Búsquedas rápidas">
+        <span>Explorar</span>
+        <button data-query="antibióticos">Después de antibióticos</button>
+        <button data-query="síndrome de intestino irritable">SII</button>
+        <button data-query="estreñimiento">Estreñimiento</button>
+        <button data-query="pouchitis">Pouchitis</button>
+        <button data-query="vaginosis">Vaginosis</button>
+        <button data-query="periodontitis">Periodontitis</button>
+        <button data-query="Helicobacter">H. pylori</button>
+        <button data-query="adiposidad">Adiposidad</button>
+      </div>
+      <div class="database-pulse" aria-label="Cobertura de la base de datos">
+        <span><strong id="totalRelations">25</strong> relaciones curadas</span>
+        <span><strong id="totalEntities">—</strong> cepas o formulaciones exactas</span>
+        <span><strong id="totalContexts">—</strong> contextos clínicos</span>
+      </div>
+    </section>
+
+    <section class="workspace" aria-label="Resultados de evidencia">
+      <aside class="filters">
+        <div class="filter-heading">
+          <button class="filter-toggle" id="filterToggle" type="button" aria-expanded="false">
+            <span>Filtrar evidencia</span>
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m6 8 4 4 4-4"/></svg>
+          </button>
+          <button id="clearFilters">Limpiar</button>
+        </div>
+        <fieldset>
+          <legend>Población</legend>
+          <label><input type="checkbox" name="population" value="adult" checked><span class="check"></span>Adultos</label>
+          <label><input type="checkbox" name="population" value="pediatric" checked><span class="check"></span>Pediatría</label>
+        </fieldset>
+        <fieldset>
+          <legend>Disponibilidad</legend>
+          <label><input type="checkbox" name="availability" value="mexico"><span class="check"></span>Disponible en México <em id="mexicoCount">0</em></label>
+        </fieldset>
+        <fieldset>
+          <legend>Área clínica</legend>
+          <label><input type="checkbox" name="area" value="Gastrointestinal" checked><span class="check"></span>Gastrointestinal</label>
+          <label><input type="checkbox" name="area" value="EII y pouchitis" checked><span class="check"></span>EII y pouchitis</label>
+          <label><input type="checkbox" name="area" value="Salud urogenital" checked><span class="check"></span>Salud urogenital</label>
+          <label><input type="checkbox" name="area" value="Salud oral" checked><span class="check"></span>Salud oral</label>
+          <label><input type="checkbox" name="area" value="Hepatología" checked><span class="check"></span>Hepatología</label>
+          <label><input type="checkbox" name="area" value="Metabolismo y composición corporal" checked><span class="check"></span>Metabolismo</label>
+          <label><input type="checkbox" name="area" value="Salud mental" checked><span class="check"></span>Salud mental</label>
+          <label><input type="checkbox" name="area" value="Alergología e inmunología" checked><span class="check"></span>Alergología</label>
+          <label><input type="checkbox" name="area" value="Neurología y cognición" checked><span class="check"></span>Neurología y cognición</label>
+          <label><input type="checkbox" name="area" value="Seguridad" checked><span class="check"></span>Seguridad</label>
+          <label><input type="checkbox" name="area" value="Pediatría" checked><span class="check"></span>Pediatría</label>
+        </fieldset>
+        <fieldset>
+          <legend>Certeza</legend>
+          <label><input type="checkbox" name="grade" value="moderada" checked><span class="check"></span>Evidencia favorable <em id="moderateCount">0</em></label>
+          <label><input type="checkbox" name="grade" value="baja" checked><span class="check"></span>Evidencia limitada <em id="lowCount">0</em></label>
+          <label><input type="checkbox" name="grade" value="muy baja" checked><span class="check"></span>Evidencia incipiente <em id="veryLowCount">0</em></label>
+        </fieldset>
+        <fieldset>
+          <legend>Objetivo</legend>
+          <label><input type="checkbox" name="intent" value="Prevención" checked><span class="check"></span>Prevención</label>
+          <label><input type="checkbox" name="intent" value="Tratamiento" checked><span class="check"></span>Tratamiento</label>
+          <label><input type="checkbox" name="intent" value="Coadyuvante" checked><span class="check"></span>Coadyuvante</label>
+        </fieldset>
+        <fieldset>
+          <legend>Conclusión clínica</legend>
+          <label><input type="checkbox" name="status" value="considerar" checked><span class="check"></span>Considerar</label>
+          <label><input type="checkbox" name="status" value="prueba" checked><span class="check"></span>Prueba monitorizada</label>
+          <label><input type="checkbox" name="status" value="no-rutinario" checked><span class="check"></span>No rutinario</label>
+          <label><input type="checkbox" name="status" value="insuficiente" checked><span class="check"></span>Insuficiente</label>
+          <label><input type="checkbox" name="status" value="evitar" checked><span class="check"></span>Evitar</label>
+        </fieldset>
+        <div class="scope-note">
+          <strong>Alcance v0.6</strong>
+          <p>Cepa o formulación exacta · Evidencia clínica y disponibilidad pública en México.</p>
+        </div>
+      </aside>
+
+      <div class="results-panel">
+        <p class="translation-note" id="translationNote" hidden></p>
+        <div class="results-header">
+          <div>
+            <p id="resultContext">Vista general</p>
+            <h2><span id="resultCount">0</span> relaciones clínicas</h2>
+          </div>
+          <div class="legend"><span class="dot"></span>Revisión editorial clínica independiente</div>
+        </div>
+        <div id="results" class="results-grid"></div>
+        <div id="emptyState" class="empty-state" hidden>
+          <div>0</div>
+          <h3>No encontramos una relación exacta</h3>
+          <p>Prueba con otra condición o revisa la ortografía de la cepa. No inferimos eficacia desde la especie.</p>
+          <button id="resetSearch">Ver toda la evidencia</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Herramienta de apoyo para profesionales de la salud. No sustituye juicio clínico, diagnóstico ni tratamiento individualizado.</p>
+    <p>Última revisión editorial: <time datetime="2026-09-06">06 sep 2026</time></p>
+  </footer>
+
+  <dialog id="detailDialog" class="detail-dialog">
+    <div id="detailContent"></div>
+  </dialog>
+  <dialog id="infoDialog" class="info-dialog">
+    <button class="dialog-close" data-close aria-label="Cerrar">×</button>
+    <div id="infoContent"></div>
+  </dialog>
+  <dialog id="accessDialog" class="access-dialog">
+    <div id="accessContent"></div>
+  </dialog>
+
+  <script src="data-v3.js"></script>
+  <script src="data-v4.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
