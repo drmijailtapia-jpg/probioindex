@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="es" class="auth-pending">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Base clínica independiente de evidencia sobre probióticos, organizada por cepa exacta, indicación y población adulta o pediátrica.">
+  <meta name="theme-color" content="#087c5b">
+  <title>ProbioIndex — Evidencia por cepa</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="ProbioIndex, inicio">
+      <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span>ProbioIndex</span>
+      <small>v0.9 clínica</small>
+    </a>
+    <nav class="top-actions" aria-label="Navegación principal">
+      <button class="access-button" id="accessButton">Acceso</button>
+      <button class="text-button" id="changesButton">Novedades</button>
+      <button class="text-button" id="methodButton">Metodología</button>
+      <button class="icon-button" id="libraryButton" aria-label="Abrir fichas guardadas y recientes" title="Guardadas y recientes">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 4.5h11a1.5 1.5 0 0 1 1.5 1.5v14l-7-3.8L5 20V6a1.5 1.5 0 0 1 1.5-1.5Z"/><path d="M9 8h6"/></svg>
+      </button>
+      <button class="language-button" id="languageButton" aria-label="Cambiar idioma">English</button>
+      <button class="icon-button" id="safetyButton" aria-label="Abrir seguridad clínica">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4.8 6v5.4c0 4.6 3 8.3 7.2 9.6 4.2-1.3 7.2-5 7.2-9.6V6L12 3Z"/><path d="M9.2 12.1 11 14l3.9-4.1"/></svg>
+      </button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="search-stage" aria-labelledby="mainTitle">
+      <div class="hero-banner">
+        <div class="hero-copy">
+          <h1 id="mainTitle">Probióticos y alimentos funcionales, con la evidencia en contexto.</h1>
+          <p class="lede">Encuentra la cepa estudiada para cada condición, revisa las indicaciones asociadas a una cepa o explora los posibles beneficios de alimentos funcionales.</p>
+        </div>
+        <div class="hero-index" aria-hidden="true">
+          <svg class="microbe-art" viewBox="0 0 90 68" aria-hidden="true">
+            <g class="microbe-rod"><rect x="8" y="27" width="31" height="12" rx="6"/><circle cx="14" cy="33" r="2"/><circle cx="31" cy="33" r="2"/></g>
+            <g class="microbe-rod microbe-rod-2"><rect x="42" y="9" width="34" height="12" rx="6"/><circle cx="49" cy="15" r="2"/><circle cx="68" cy="15" r="2"/></g>
+            <g class="microbe-cocci"><circle cx="57" cy="42" r="7"/><circle cx="71" cy="43" r="7"/><circle cx="64" cy="54" r="7"/><circle cx="50" cy="53" r="7"/></g>
+          </svg>
+          <span>PI</span>
+        </div>
+      </div>
+
+      <div class="search-shell">
+        <div class="mode-switch" role="tablist" aria-label="Tipo de búsqueda">
+          <button role="tab" aria-selected="true" class="active" data-mode="strain">Cepa → condición</button>
+          <button role="tab" aria-selected="false" data-mode="condition">Condición → cepa</button>
+          <button role="tab" aria-selected="false" data-mode="foods">Alimentos funcionales</button>
+          <button role="tab" aria-selected="false" data-mode="compare">Comparar cepas</button>
+        </div>
+        <label class="search-field">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.7"/><path d="m16 16 4 4"/></svg>
+          <input id="searchInput" type="search" autocomplete="off" placeholder="Busca SII, pouchitis, vaginosis…" aria-label="Buscar evidencia clínica">
+          <kbd>⌘ K</kbd>
+        </label>
+        <p class="last-updated">Última actualización: <time datetime="2026-09-21">21 sep 2026</time></p>
+        <div class="suggestions" id="suggestions" aria-label="Sugerencias de búsqueda"></div>
+      </div>
+
+      <div class="quick-links" aria-label="Búsquedas rápidas">
+        <span>Explorar</span>
+        <button data-query="antibióticos">Después de antibióticos</button>
+        <button data-query="síndrome de intestino irritable">SII</button>
+        <button data-query="estreñimiento">Estreñimiento</button>
+        <button data-query="pouchitis">Pouchitis</button>
+        <button data-query="vaginosis">Vaginosis</button>
+        <button data-query="periodontitis">Periodontitis</button>
+        <button data-query="Helicobacter">H. pylori</button>
+        <button data-query="adiposidad">Adiposidad</button>
+      </div>
+      <div class="database-pulse" aria-label="Cobertura de la base de datos">
+        <span><strong id="totalRelations">25</strong> relaciones curadas</span>
+        <span><strong id="totalEntities">—</strong> cepas o formulaciones exactas</span>
+        <span><strong id="totalContexts">—</strong> contextos clínicos</span>
+      </div>
+    </section>
+
+    <section class="workspace" aria-label="Resultados de evidencia">
+      <aside class="filters">
+        <div class="filter-heading">
+          <button class="filter-toggle" id="filterToggle" type="button" aria-expanded="false">
+            <span>Filtrar evidencia</span>
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m6 8 4 4 4-4"/></svg>
+          </button>
+          <button id="clearFilters">Limpiar</button>
+        </div>
+        <fieldset>
+          <legend>Población</legend>
+          <label><input type="checkbox" name="population" value="adult" checked><span class="check"></span>Adultos</label>
+          <label><input type="checkbox" name="population" value="pediatric" checked><span class="check"></span>Pediatría</label>
+        </fieldset>
+        <fieldset>
+          <legend>Disponibilidad</legend>
+          <label><input type="checkbox" name="availability" value="mexico"><span class="check"></span><span class="filter-label">Disponible en México</span><em id="mexicoCount">0</em></label>
+        </fieldset>
+        <fieldset>
+          <legend>Tipo de estudio</legend>
+          <label><input type="checkbox" name="studyType" value="meta" checked><span class="check"></span>Metaanálisis</label>
+          <label><input type="checkbox" name="studyType" value="rct" checked><span class="check"></span>ECA</label>
+          <label><input type="checkbox" name="studyType" value="other" checked><span class="check"></span>Otros estudios</label>
+        </fieldset>
+        <fieldset>
+          <legend>Área clínica</legend>
+          <label><input type="checkbox" name="area" value="Gastrointestinal" checked><span class="check"></span>Gastrointestinal</label>
+          <label><input type="checkbox" name="area" value="EII y pouchitis" checked><span class="check"></span>EII y pouchitis</label>
+          <label><input type="checkbox" name="area" value="Salud urogenital" checked><span class="check"></span>Salud urogenital</label>
+          <label><input type="checkbox" name="area" value="Salud oral" checked><span class="check"></span>Salud oral</label>
+          <label><input type="checkbox" name="area" value="Hepatología" checked><span class="check"></span>Hepatología</label>
+          <label><input type="checkbox" name="area" value="Metabolismo y composición corporal" checked><span class="check"></span>Metabolismo</label>
+          <label><input type="checkbox" name="area" value="Salud mental" checked><span class="check"></span>Salud mental</label>
+          <label><input type="checkbox" name="area" value="Alergología e inmunología" checked><span class="check"></span>Alergología</label>
+          <label><input type="checkbox" name="area" value="Neurología y cognición" checked><span class="check"></span>Neurología y cognición</label>
+          <label><input type="checkbox" name="area" value="Seguridad" checked><span class="check"></span>Seguridad</label>
+          <label><input type="checkbox" name="area" value="Pediatría" checked><span class="check"></span>Pediatría</label>
+        </fieldset>
+        <fieldset>
+          <legend>Objetivo</legend>
+          <label><input type="checkbox" name="intent" value="Prevención" checked><span class="check"></span>Prevención</label>
+          <label><input type="checkbox" name="intent" value="Tratamiento" checked><span class="check"></span>Tratamiento</label>
+          <label><input type="checkbox" name="intent" value="Coadyuvante" checked><span class="check"></span>Coadyuvante</label>
+        </fieldset>
+      </aside>
+
+      <div class="results-panel">
+        <p class="translation-note" id="translationNote" hidden></p>
+        <div class="results-header">
+          <div>
+            <p id="resultContext">Vista general</p>
+            <h2><span id="resultCount">0</span> relaciones clínicas</h2>
+          </div>
+          <div class="legend"><span class="dot"></span>Revisión editorial clínica independiente</div>
+        </div>
+        <div id="results" class="results-grid"></div>
+        <div id="emptyState" class="empty-state" hidden>
+          <div>0</div>
+          <h3>No encontramos una relación exacta</h3>
+          <p>Prueba con otra condición o revisa la ortografía de la cepa. No inferimos eficacia desde la especie.</p>
+          <button id="resetSearch">Ver toda la evidencia</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Herramienta de apoyo para profesionales de la salud. No sustituye juicio clínico, diagnóstico ni tratamiento individualizado.</p>
+    <p>Última revisión editorial: <time datetime="2026-09-21">21 sep 2026</time></p>
+  </footer>
+
+  <dialog id="detailDialog" class="detail-dialog">
+    <div id="detailContent"></div>
+  </dialog>
+  <dialog id="compareDialog" class="detail-dialog compare-dialog"><div id="compareContent"></div></dialog>
+  <dialog id="infoDialog" class="info-dialog">
+    <button class="dialog-close" data-close aria-label="Cerrar">×</button>
+    <div id="infoContent"></div>
+  </dialog>
+  <dialog id="accessDialog" class="access-dialog">
+    <div id="accessContent"></div>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
+  <script src="data-v3.js"></script>
+  <script src="data-v4.js"></script>
+  <script src="data-v5.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
