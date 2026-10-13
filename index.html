@@ -16,7 +16,7 @@
     <a class="brand" href="#" aria-label="ProbioIndex, inicio">
       <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
       <span>ProbioIndex</span>
-      <small>v0.12 clínica</small>
+      <small>v0.14 clínica</small>
     </a>
     <nav class="top-actions" aria-label="Navegación principal">
       <button class="access-button" id="accessButton">Acceso</button>
@@ -30,14 +30,22 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4.8 6v5.4c0 4.6 3 8.3 7.2 9.6 4.2-1.3 7.2-5 7.2-9.6V6L12 3Z"/><path d="M9.2 12.1 11 14l3.9-4.1"/></svg>
       </button>
     </nav>
+    <button class="mobile-menu-button" id="mobileMenuButton" type="button" aria-expanded="false" aria-controls="mobileMenu" aria-label="Abrir menú">•••</button>
+    <div class="mobile-menu" id="mobileMenu" hidden>
+      <button id="mobileLibrary">Guardadas y recientes</button>
+      <button id="mobileChanges">Novedades</button>
+      <button id="mobileMethod">Metodología</button>
+      <button id="mobileSafety">Seguridad clínica</button>
+      <button id="mobileLanguage">English</button>
+    </div>
   </header>
 
   <main>
     <section class="search-stage" aria-labelledby="mainTitle">
       <div class="hero-banner">
         <div class="hero-copy">
-          <h1 id="mainTitle">Probióticos y alimentos funcionales, con la evidencia en contexto.</h1>
-          <p class="lede">Encuentra la cepa estudiada para cada condición, revisa las indicaciones asociadas a una cepa o explora los posibles beneficios de alimentos funcionales.</p>
+          <h1 id="mainTitle">ProbioIndex</h1>
+          <p class="lede">Evidencia actualizada sobre probióticos, prebióticos y alimentos funcionales.</p>
         </div>
         <div class="hero-index" aria-hidden="true">
           <svg class="microbe-art" viewBox="0 0 90 68" aria-hidden="true">

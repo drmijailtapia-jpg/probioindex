@@ -394,7 +394,19 @@ window.addEventListener("probioindex:authchange", event => {
   if (!session?.user) { syncedLibraryUserId=null; if (localStorage.getItem("probioindex-library-owner")) { favorites.clear(); recentViews=[]; persistLibraryLocally(); localStorage.removeItem("probioindex-library-owner"); } return; }
   if (syncedLibraryUserId !== session.user.id) syncLibraryFromAccount(session);
 });
-const latestReview = {date:"2026-10-12",esDate:"12 oct 2026",enDate:"12 Oct 2026",es:"Se incorporaron cinco relaciones de la formulación exacta de 14 cepas NCIMB/PXN disponible en México: SII-D, migraña episódica, migraña crónica, depresión mayor como coadyuvante de antidepresivos y marcadores inflamatorios en esclerosis múltiple recurrente-remitente. Los resultados se mantienen en la capa de formulación completa y no se asignan a sus cepas por separado.",en:"Five relations for the exact 14-strain NCIMB/PXN formulation available in Mexico were incorporated: IBS-D, episodic migraine, chronic migraine, major depression as an antidepressant adjunct, and inflammatory markers in relapsing-remitting multiple sclerosis. Results remain at the complete-formulation layer and are not assigned to its individual strains."};
+const latestReview = {
+  date:"2026-10-12",
+  esDate:"12 oct 2026",
+  enDate:"12 Oct 2026",
+  updatesEs:[
+    "Se agregaron fichas de la formulación NCIMB/PXN de 14 cepas para SII-D, migraña episódica y crónica, depresión mayor coadyuvante y marcadores inflamatorios en esclerosis múltiple recurrente-remitente.",
+    "Se agregó documentación de un ECA y una revisión específica para <i>Bifidobacterium breve</i> M-16V en prematuros."
+  ],
+  updatesEn:[
+    "New records were added for the 14-strain NCIMB/PXN formulation: IBS-D, episodic and chronic migraine, major depression as an adjunct, and inflammatory markers in relapsing-remitting multiple sclerosis.",
+    "Documentation from one RCT and one strain-specific review was added for <i>Bifidobacterium breve</i> M-16V in preterm infants."
+  ]
+};
 const documentaryWatchlist = [{
   date:"2026-10-12",
   title:"Bifidobacterium breve M-16V · prematuros · actualización documental",
@@ -644,19 +656,19 @@ const reportedResult = item => {
   return `${lead.design}${n}, ${lead.year}: ${lead.result}`;
 };
 const ageGroup = item => item.ageGroup || "adult";
-function editorialFor(item) {
-  return {
-    update: state.lang === "en" ? latestReview.en : latestReview.es
-  };
-}
 function applyLanguage() {
   document.documentElement.lang = state.lang;
   window.ProbioAuth?.setLanguage(state.lang);
   $("#methodButton").textContent = state.lang === "en" ? "Methodology" : "Metodología";
   $("#changesButton").textContent = state.lang === "en" ? "What's new" : "Novedades";
   $("#languageButton").textContent = state.lang === "en" ? "Español" : "English";
-  $("#mainTitle").textContent = state.lang === "en" ? "Probiotics and functional foods, with evidence in context." : "Probióticos y alimentos funcionales, con la evidencia en contexto.";
-  $(".lede").textContent = state.lang === "en" ? "Find the strain studied for each condition, review the indications linked to a strain, or explore the potential benefits of functional foods." : "Encuentra la cepa estudiada para cada condición, revisa las indicaciones asociadas a una cepa o explora los posibles beneficios de alimentos funcionales.";
+  $("#mainTitle").textContent = "ProbioIndex";
+  $(".lede").textContent = state.lang === "en" ? "Updated evidence on probiotics, prebiotics, and functional foods." : "Evidencia actualizada sobre probióticos, prebióticos y alimentos funcionales.";
+  $("#mobileLibrary").textContent = state.lang === "en" ? "Saved and recent" : "Guardadas y recientes";
+  $("#mobileChanges").textContent = state.lang === "en" ? "What’s new" : "Novedades";
+  $("#mobileMethod").textContent = state.lang === "en" ? "Methodology" : "Metodología";
+  $("#mobileSafety").textContent = state.lang === "en" ? "Clinical safety" : "Seguridad clínica";
+  $("#mobileLanguage").textContent = state.lang === "en" ? "Español" : "English";
   $("#searchInput").placeholder = state.lang === "en" ? (state.mode === "condition" ? "Search IBS, pouchitis, vaginosis…" : state.mode === "strain" ? "Search L. plantarum, 299v, LGG…" : state.mode === "compare" ? "Choose two strains to compare" : "Browse food matrices with evidence") : (state.mode === "condition" ? "Busca SII, pouchitis, vaginosis…" : state.mode === "strain" ? "Busca L. plantarum, 299v, LGG…" : state.mode === "compare" ? "Elige dos cepas para comparar" : "Explora las matrices alimentarias con evidencia");
   $(".last-updated").innerHTML = state.lang === "en" ? `Last updated: <time datetime="${latestReview.date}">${latestReview.enDate}</time>` : `Última actualización: <time datetime="${latestReview.date}">${latestReview.esDate}</time>`;
   $(".quick-links span").textContent = state.lang === "en" ? "Explore" : "Explorar";
@@ -939,13 +951,10 @@ function openDetail(id, syncUrl = true) {
       </div>
       </section>
       <section class="detail-section regimen-section"><h3>${state.lang==="en"?"Intervention details":"Detalle de la intervención"}</h3><dl class="regimen-list"><div><dt>${state.lang==="en"?"Intervention":"Intervención"}</dt><dd>${localize(item,"interventionType") || (state.lang==="en"?"Live microorganism":"Microorganismo vivo")}</dd></div><div><dt>${state.lang==="en"?"Regimen and context":"Pauta y contexto"}</dt><dd>${localize(item,"doseDetail")}</dd></div></dl></section>
-      <section class="detail-section"><h3>${state.lang==="en"?"Linked studies":"Estudios vinculados"}</h3><p class="study-order-note">${state.lang==="en"?"Meta-analyses are shown first, followed by randomized trials and other favorable studies.":"Se muestran primero los metaanálisis, después los ECA y, por último, otros estudios con resultados favorables."}</p><div class="study-table-wrap"><table class="study-table"><thead><tr><th>${state.lang==="en"?"Design":"Diseño"}</th><th>N / ${state.lang==="en"?"year":"año"}</th><th>${state.lang==="en"?"Reported result":"Resultado reportado"}</th></tr></thead><tbody>${localizedStudies(item).map((study, index) => `<tr><td><a href="${study.url}" target="_blank" rel="noopener">${study.design} ↗</a><span class="citation-actions"><button class="copy-citation" data-citation="${index}" data-style="apa">APA</button><button class="copy-citation" data-citation="${index}" data-style="vancouver">Vancouver</button></span></td><td>${study.n}<br><small>${study.year}</small></td><td>${study.result}</td></tr>`).join("")}</tbody></table></div></section>
-      <section class="detail-section"><h3>${state.lang==="en"?"Contraindications and precautions":"Contraindicaciones y precauciones"}</h3><ul>${(state.lang==="en" ? (item.en?.avoid || safetyEn.avoid) : avoid).map(x=>`<li>${x}</li>`).join("")}</ul></section>
-      <section class="detail-section"><h3>${state.lang==="en"?"Adverse effects and interactions":"Efectos adversos e interacciones"}</h3><ul>${(state.lang==="en" ? (item.en?.adverse || safetyEn.adverse) : adverse).map(x=>`<li>${x}</li>`).join("")}</ul><p><strong>${state.lang==="en"?"Interactions:":"Interacciones:"}</strong> ${state.lang==="en" ? (localize(item,"interactions") || safetyEn.interactions) : interactions}</p></section>
-      <section class="detail-section editorial-section">
-        <div class="editorial-heading"><div><span>${state.lang==="en"?"Documentary update":"Actualización documental"}</span><h3>${editorialFor(item).update}</h3></div><time datetime="${latestReview.date}">${state.lang==="en"?latestReview.enDate:latestReview.esDate}</time></div>
-        <p class="editorial-independence">${state.lang==="en"?"The record presents published study data without assigning a grade or clinical recommendation. Funding or sponsorship does not determine inclusion or wording.":"La ficha presenta datos publicados sin asignar una graduación ni una recomendación clínica. El financiamiento o patrocinio no determina la inclusión ni la redacción."}</p>
-      </section>
+      <section class="detail-section studies-section"><h3>${state.lang==="en"?"Linked studies":"Estudios vinculados"}</h3><p class="study-order-note">${state.lang==="en"?"Meta-analyses are shown first, followed by randomized trials and other favorable studies.":"Se muestran primero los metaanálisis, después los ECA y, por último, otros estudios con resultados favorables."}</p><div class="study-table-wrap"><table class="study-table"><thead><tr><th>${state.lang==="en"?"Design":"Diseño"}</th><th>N / ${state.lang==="en"?"year":"año"}</th><th>${state.lang==="en"?"Reported result":"Resultado reportado"}</th></tr></thead><tbody>${localizedStudies(item).map((study, index) => `<tr><td><a href="${study.url}" target="_blank" rel="noopener">${study.design} ↗</a><span class="citation-actions"><button class="copy-citation" data-citation="${index}" data-style="apa">APA</button><button class="copy-citation" data-citation="${index}" data-style="vancouver">Vancouver</button></span></td><td>${study.n}<br><small>${study.year}</small></td><td>${study.result}</td></tr>`).join("")}</tbody></table></div></section>
+      <section class="detail-section precautions-section"><h3>${state.lang==="en"?"Contraindications and precautions":"Contraindicaciones y precauciones"}</h3><ul>${(state.lang==="en" ? (item.en?.avoid || safetyEn.avoid) : avoid).map(x=>`<li>${x}</li>`).join("")}</ul></section>
+      <section class="detail-section adverse-section"><h3>${state.lang==="en"?"Adverse effects and interactions":"Efectos adversos e interacciones"}</h3><ul>${(state.lang==="en" ? (item.en?.adverse || safetyEn.adverse) : adverse).map(x=>`<li>${x}</li>`).join("")}</ul><p><strong>${state.lang==="en"?"Interactions:":"Interacciones:"}</strong> ${state.lang==="en" ? (localize(item,"interactions") || safetyEn.interactions) : interactions}</p></section>
+      <p class="record-review-date">${state.lang==="en"?"Last documentary review:":"Última revisión documental:"} <time datetime="${latestReview.date}">${state.lang==="en"?latestReview.enDate:latestReview.esDate}</time></p>
     </div>`;
   dialog.querySelector("[data-close]").addEventListener("click", () => dialog.close());
   dialog.querySelector("#favoriteDetail").addEventListener("click", () => { if(favorites.has(item.id)) favorites.delete(item.id); else favorites.add(item.id); persistLibraryLocally(); syncLibraryItem(item.id,{is_saved:favorites.has(item.id)}); dialog.querySelector("#favoriteDetail").textContent=favorites.has(item.id)?(state.lang==="en"?"Saved":"Guardada"):(state.lang==="en"?"Save":"Guardar"); });
@@ -1029,8 +1038,8 @@ function openCompare(selectedIds = state.compareIds){
 function openInfo(type) {
   if (type === "changes") {
     const en = state.lang === "en";
-    const watchlist = documentaryWatchlist.map(note => `<article><time datetime="${note.date}">${note.date}</time><h3>${en?note.titleEn:note.title}</h3><p>${en?note.textEn:note.text}</p><p><a href="${note.url}" target="_blank" rel="noopener">${en?"Open publication":"Abrir publicación"} ↗</a></p></article>`).join("");
-    $("#infoContent").innerHTML = `<div class="info-kicker">${en?"RELEASE HISTORY":"HISTORIAL DE CAMBIOS"}</div><h2>${en?"What's new in ProbioIndex":"Novedades de ProbioIndex"}</h2><div class="change-log"><article><time datetime="2026-09-17">17 ${en?"Sep":"sep"} 2026</time><h3>${en?"Clinical navigation update":"Actualización de navegación clínica"}</h3><ul><li>${en?"Strain comparator added as a primary workspace.":"Comparador de cepas incorporado como espacio principal."}</li><li>${en?"Shareable record links, evidence timelines and study-type filters added.":"Se incorporaron enlaces compartibles, cronologías y filtros por tipo de estudio."}</li><li>${en?"Methodology and comparison layout expanded.":"Se ampliaron la metodología y la tabla comparativa."}</li></ul></article><article><time datetime="${latestReview.date}">${en?latestReview.enDate:latestReview.esDate}</time><h3>${en?"Documentary review":"Revisión documental"}</h3><p>${en?latestReview.en:latestReview.es}</p></article>${watchlist}</div><p class="change-note">${en?"Interface changes do not modify the date of the documentary review unless publications, strains or clinical relations are changed.":"Los cambios de interfaz no modifican la fecha de revisión documental, salvo que cambien publicaciones, cepas o relaciones clínicas."}</p>`;
+    const updates = (en ? latestReview.updatesEn : latestReview.updatesEs).map(update => `<li>${update}</li>`).join("");
+    $("#infoContent").innerHTML = `<div class="info-kicker">${en?"LATEST DOCUMENTARY UPDATE":"ÚLTIMA ACTUALIZACIÓN DOCUMENTAL"}</div><h2>${en?"What's new":"Novedades"}</h2><div class="change-log"><article><time datetime="${latestReview.date}">${en?latestReview.enDate:latestReview.esDate}</time><ul>${updates}</ul></article></div>`;
     $("#infoDialog").showModal(); return;
   }
   if (type === "foods") {
@@ -1168,6 +1177,23 @@ $("#methodButton").addEventListener("click",()=>openInfo("method"));
 $("#changesButton").addEventListener("click",()=>openInfo("changes"));
 $("#libraryButton").addEventListener("click",openLibrary);
 $("#safetyButton").addEventListener("click",()=>openInfo("safety"));
+function closeMobileMenu() {
+  const menu = $("#mobileMenu"), button = $("#mobileMenuButton");
+  menu.hidden = true;
+  button.setAttribute("aria-expanded", "false");
+}
+$("#mobileMenuButton").addEventListener("click", event => {
+  event.stopPropagation();
+  const menu = $("#mobileMenu"), open = menu.hidden;
+  menu.hidden = !open;
+  $("#mobileMenuButton").setAttribute("aria-expanded", String(open));
+});
+$("#mobileLibrary").addEventListener("click", () => { closeMobileMenu(); openLibrary(); });
+$("#mobileChanges").addEventListener("click", () => { closeMobileMenu(); openInfo("changes"); });
+$("#mobileMethod").addEventListener("click", () => { closeMobileMenu(); openInfo("method"); });
+$("#mobileSafety").addEventListener("click", () => { closeMobileMenu(); openInfo("safety"); });
+$("#mobileLanguage").addEventListener("click", () => { closeMobileMenu(); $("#languageButton").click(); });
+document.addEventListener("click", event => { if (!event.target.closest(".mobile-menu") && !event.target.closest("#mobileMenuButton")) closeMobileMenu(); });
 $("#languageButton").addEventListener("click",()=>{state.lang=state.lang==="es"?"en":"es";const url=new URL(window.location.href);if(state.lang==="en")url.searchParams.set("lang","en");else url.searchParams.delete("lang");history.replaceState(history.state,"",url);applyLanguage();const record=url.searchParams.get("record");if(record&&$("#detailDialog").open)openDetail(record,false);});
 $$('[data-close]').forEach(button=>button.addEventListener("click",()=>button.closest("dialog").close()));
 document.addEventListener("keydown",event=>{if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==="k"){event.preventDefault();$("#searchInput").focus();}});
