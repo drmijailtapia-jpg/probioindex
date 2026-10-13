@@ -605,3 +605,153 @@ footer { background: #f3f9f6; border-top-color: #cbded8; }
   .search-shell { margin: 18px 0 0; border-radius: 17px; }
   h1 { font-size: 37px; line-height: 1.04; }
 }
+
+/* Paleta v0.12 · azul profundo + verde oliva */
+:root {
+  --ink: #08114E;
+  --ink-2: #20285F;
+  --muted: #5B6388;
+  --line: #D9DDEA;
+  --soft: #F4F5E8;
+  --paper: #FFFFFF;
+  --night: #08114E;
+  --night-2: #141E67;
+  --accent: #08114E;
+  --accent-dark: #050A33;
+  --signal: #BCC776;
+  --amber: #A16F25;
+  --rose: #A65364;
+  --shadow: 0 16px 38px rgba(8, 17, 78, .12);
+}
+
+::selection { color: #08114E; background: #BCC776; }
+body { color: #08114E; background: #FAFAF7; }
+.auth-pending body { background: #F5F6ED; }
+
+.topbar { background: rgba(255,255,255,.97); border-bottom-color: #D9DDEA; color: #08114E; }
+.brand small { color: #515A82; border-color: #D9DDEA; background: #F6F7EF; }
+.brand-mark i { background: #08114E; }
+.access-button, .primary-cta, .primary-action, .empty-state button { background: #08114E; box-shadow: 0 9px 22px rgba(8,17,78,.18); }
+.access-button:hover, .primary-cta:hover, .primary-action:hover, .empty-state button:hover { background: #192572; }
+.text-button { color: #515A82; }
+.text-button:hover { color: #08114E; }
+.language-button, .icon-button { color: #08114E; border-color: #CCD1E1; background: #fff; }
+.language-button:hover, .icon-button:hover { color: #08114E; background: #F4F5E8; }
+
+.search-stage { background: linear-gradient(180deg, #F4F5E8 0%, #FAFAF7 70%, #FFF 100%); }
+.hero-banner { color: #fff; border: 0; background: linear-gradient(128deg, #08114E 0%, #111C63 61%, #1B2877 100%); box-shadow: 0 28px 70px rgba(8,17,78,.24); }
+.hero-banner::before { border-color: #BCC776; }
+.hero-banner::after { border-color: rgba(188,199,118,.27); }
+h1 { color: #fff; }
+.lede { color: #EDF0CF; }
+.hero-index { color: #08114E; background: #BCC776; box-shadow: 0 16px 32px rgba(3,8,41,.32); }
+
+.search-shell { background: #fff; border-color: #D9DDEA; box-shadow: 0 22px 55px rgba(8,17,78,.16); }
+.mode-switch { background: #F1F2E9; border-bottom-color: #DCE0E6; }
+.mode-switch button { color: #4F587D; }
+.mode-switch button.active { color: #08114E; background: #BCC776; }
+.search-field { color: #08114E; background: #fff; }
+.search-field input { color: #08114E; }
+.search-field input::placeholder { color: #7A829F; }
+kbd { color: #515A82; border-color: #D3D8E5; background: #F6F7EF; }
+.last-updated { color: #5B6388; background: #fff; }
+.suggestions { border-top-color: #DCE0E6; background: #fff; }
+.suggestions button { color: #20285F; }
+.suggestions button:hover { background: #F4F5E8; }
+.quick-links span, .database-pulse { color: #5B6388; }
+.quick-links button { color: #39436D; border-color: #CCD1E1; background: rgba(255,255,255,.75); }
+.quick-links button:hover { color: #08114E; border-color: #08114E; background: #fff; }
+.database-pulse strong { color: #08114E; }
+
+.workspace { background: #fff; }
+.filters { border-right-color: #D9DDEA; }
+.filter-heading button, .results-header p { color: #08114E; }
+fieldset label { color: #20285F; }
+.check { border-color: #ABB2C8; }
+input:checked + .check { background: #08114E; border-color: #08114E; }
+input:checked + .check::after { border-color: #BCC776; }
+.scope-note { border-color: #D9DDEA; background: #F5F6ED; }
+.translation-note { border-color: #D9DDEA; color: #38416A; background: #F6F7EF; }
+.legend .dot { background: #BCC776; box-shadow: 0 0 0 4px rgba(188,199,118,.25); }
+
+.evidence-card, .condition-card, .functional-food-card { border-color: #D7DBE8; background: #fff; }
+.evidence-card::before { background: #BCC776; }
+.evidence-card:hover, .condition-card:hover, .condition-card.open, .functional-food-card:hover { border-color: #98A260; box-shadow: var(--shadow); }
+.arrow, .condition-strain b { color: #08114E; }
+.card-microbe, .microbe-lacto { color: #08114E; }
+.microbe-akk { color: #738039; }
+.microbe-yeast { color: #91692A; }
+.microbe-bifido { color: #5662A3; }
+.microbe-bacillus { color: #A35A50; }
+.microbe-strep { color: #365E9B; }
+.grade.moderada { color: #08114E; background: #F4F5E8; border-color: #BCC776; }
+.status.considerar { color: #08114E; background: #F4F5E8; }
+.direction-badge { color: #515A82; border-color: #D9DDEA; background: #F8F8F4; }
+.condition-card-trigger { color: #08114E; background: #fff; }
+.condition-card-trigger small { color: #586289; }
+.condition-meta { color: #5B6388; }
+.condition-meta b { border-color: #CCD1E1; color: #08114E; }
+.condition-strains { border-top-color: #DCE0E6; background: #F8F8F4; }
+.condition-strain { border-bottom-color: #E2E5ED; color: #08114E; }
+.compare-workspace { border-color: #D7DBE8; box-shadow: 0 12px 35px rgba(8,17,78,.08); }
+.compare-workspace h3, .compare-selects input, .compare-picker select { color: #08114E; }
+.compare-workspace p, .compare-context small, .compare-context span, .compare-results span, .compare-results p { color: #5B6388; }
+.compare-context { border-color: #D9DDEA; color: #08114E; background: #F5F6ED; }
+.compare-selects input, .compare-picker select { border-color: #C9CFE0; background: #FBFBF8; }
+.compare-selects input:focus, .compare-picker select:focus { outline-color: rgba(188,199,118,.55); border-color: #08114E; background: #fff; }
+.compare-clear { color: #515A82; background: #EEF0E6; }
+.compare-results { border-color: #C9CFE0; box-shadow: 0 16px 35px rgba(8,17,78,.16); }
+.compare-results button:hover, .compare-results button:focus { background: #F4F5E8; }
+.compare-hint { color: #87543A !important; }
+
+.detail-head { color: #fff; background: linear-gradient(135deg, #08114E, #16236E); }
+.detail-toolbar span, .detail-head p { color: #DEE3B7; }
+.detail-toolbar button { color: #fff; }
+.detail-head .status { color: #08114E; background: #BCC776; box-shadow: none; }
+.detail-head .grade { color: #fff; border-color: rgba(255,255,255,.44); }
+.detail-action { color: #08114E; border-color: #CCD1E1; background: #fff; }
+.detail-action:hover { color: #08114E; background: #F4F5E8; }
+.reading-mode .detail-head { background: #fff; border-bottom-color: #D9DDEA; }
+.clinical-callout { border-left-color: #BCC776; }
+.effect-panel { border-color: #D9DDEA; background: #D9DDEA; }
+.effect-panel div, .detail-stat { background: #F6F7EF; }
+.detail-stat { border-color: #D9DDEA; }
+.editorial-section { border-color: #D9DDEA; background: #F6F7EF; }
+.editorial-heading h3, .food-benefit strong { color: #08114E; }
+.study-table a, .source em, .functional-food-card a, .food-grid a, .micrograph-panel a { color: #08114E; }
+.source b { color: #08114E; background: #BCC776; }
+.micrograph-panel { border-color: #D9DDEA; background: #F6F7EF; }
+.micrograph-panel img { background: #E3E6D4; }
+.micrograph-panel figcaption > span, .micrograph-panel small, .micrograph-panel p { color: #5B6388; }
+.micrograph-panel strong { color: #08114E; }
+
+.food-card-type { color: #4E5880; }
+.food-benefit { background: #F1F2E9; }
+.functional-food-card dl div { background: #F6F7EF; }
+.functional-food-card .food-note { color: #5B6388; }
+.food-reported-result p { color: #20285F; }
+
+.access-aside { background: linear-gradient(145deg, #08114E, #182674); }
+.access-aside .brand-mark i { background: #BCC776; }
+.access-kicker, .access-assurances li::before { color: #BCC776; }
+.access-kicker::before { background: #BCC776; box-shadow: 0 0 0 5px rgba(188,199,118,.17); }
+.access-tag { color: #08114E; background: #BCC776; }
+.trial-choice { border-color: #D9DDEA; background: #F5F6ED; }
+.trial-button, .preview-button { color: #08114E; border-color: #08114E; }
+.trial-button:hover, .preview-button:hover { color: #08114E; border-color: #BCC776; background: #BCC776; }
+.auth-main input:focus, .auth-main select:focus, .code-row input:focus { outline-color: rgba(188,199,118,.52); border-color: #08114E; }
+
+.comparison-table { border-color: #D9DDEA; }
+.comparison-table th, .comparison-table td { border-right-color: #D9DDEA; border-bottom-color: #D9DDEA; }
+.comparison-table thead th { color: #08114E; background: #F1F2E9; }
+.comparison-table tbody th { color: #515A82; background: #F8F8F4; }
+.comparison-table a, .info-kicker, .change-log time, .library-clear, .copy-citation { color: #08114E; }
+.library-columns section, .change-log article { border-color: #D9DDEA; background: #FBFBF8; }
+.library-title span { color: #08114E; background: #BCC776; }
+.library-record { color: #08114E; border-top-color: #E2E5ED; }
+.library-record b { color: #08114E; }
+footer { background: #F6F7EF; border-top-color: #D9DDEA; }
+
+@media (max-width: 640px) {
+  .compare-results { box-shadow: 0 -14px 38px rgba(8,17,78,.18); }
+}

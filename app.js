@@ -394,8 +394,15 @@ window.addEventListener("probioindex:authchange", event => {
   if (!session?.user) { syncedLibraryUserId=null; if (localStorage.getItem("probioindex-library-owner")) { favorites.clear(); recentViews=[]; persistLibraryLocally(); localStorage.removeItem("probioindex-library-owner"); } return; }
   if (syncedLibraryUserId !== session.user.id) syncLibraryFromAccount(session);
 });
-const latestReview = {date:"2026-10-05",esDate:"5 oct 2026",enDate:"5 Oct 2026",es:"Se incorporó un metaanálisis de 19 ECA sobre Saccharomyces boulardii como coadyuvante en erradicación de H. pylori; sus estimaciones se identifican como evidencia agregada de especie y no exclusiva de CNCM I-745. También se registró un ECA hospitalario en diarrea asociada a antibióticos como evidencia con cepa no declarada, pendiente de trazabilidad.",en:"A 19-RCT meta-analysis of Saccharomyces boulardii as an adjunct to H. pylori eradication was incorporated; its estimates are identified as species-level aggregate evidence, not exclusive to CNCM I-745. A hospital antibiotic-associated-diarrhea RCT was also logged as evidence with an undeclared strain, pending traceability."};
+const latestReview = {date:"2026-10-12",esDate:"12 oct 2026",enDate:"12 Oct 2026",es:"Se incorporaron cinco relaciones de la formulación exacta de 14 cepas NCIMB/PXN disponible en México: SII-D, migraña episódica, migraña crónica, depresión mayor como coadyuvante de antidepresivos y marcadores inflamatorios en esclerosis múltiple recurrente-remitente. Los resultados se mantienen en la capa de formulación completa y no se asignan a sus cepas por separado.",en:"Five relations for the exact 14-strain NCIMB/PXN formulation available in Mexico were incorporated: IBS-D, episodic migraine, chronic migraine, major depression as an antidepressant adjunct, and inflammatory markers in relapsing-remitting multiple sclerosis. Results remain at the complete-formulation layer and are not assigned to its individual strains."};
 const documentaryWatchlist = [{
+  date:"2026-10-12",
+  title:"Bifidobacterium breve M-16V · prematuros · actualización documental",
+  titleEn:"Bifidobacterium breve M-16V · preterm infants · documentary update",
+  text:"Un ECA doble ciego en 159 prematuros menores de 33 semanas administró 3 × 10⁹ UFC/día hasta 37 semanas de edad corregida. El desenlace primario fue detección fecal: a las 3 semanas, B. breve se detectó en 91% frente a 38%. Una revisión específica de cinco ECA no identificó una diferencia estadísticamente significativa en enterocolitis necrosante ≥2, sepsis tardía, mortalidad ni edad a alimentación completa. Por ello M-16V se documenta sin vincularse a una indicación clínica de eficacia.",
+  textEn:"A double-blind RCT in 159 preterm infants younger than 33 weeks administered 3 × 10⁹ CFU/day until 37 weeks’ corrected age. Its primary endpoint was fecal detection: at week 3, B. breve was detected in 91% versus 38%. A strain-specific review of five RCTs did not identify a statistically significant difference in necrotizing enterocolitis ≥2, late-onset sepsis, mortality or age at full feeds. M-16V is therefore documented without linking it to a clinical efficacy indication.",
+  url:"https://pubmed.ncbi.nlm.nih.gov/24594833/"
+},{
   date:"2026-09-06",
   title:"Saccharomyces boulardii · diarrea asociada a antibióticos · cepa no declarada",
   titleEn:"Saccharomyces boulardii · antibiotic-associated diarrhea · undeclared strain",
@@ -724,6 +731,8 @@ const searchSynonymGroups = [
   ["shirota", "l casei shirota", "lacticaseibacillus paracasei shirota"],
   ["k12", "m18", "streptococcus salivarius"],
   ["ncfm", "nc fm", "l acidophilus ncfm"],
+  ["bl 04", "bl04", "b lactis bl 04", "bifidobacterium animalis subsp lactis bl 04"],
+  ["m 16v", "m16v", "b breve m 16v", "bifidobacterium breve m 16v"],
   ["bi 07", "bi07"],
   ["dr7", "l paracasei dr7"],
   ["ps128", "l plantarum ps128"],
