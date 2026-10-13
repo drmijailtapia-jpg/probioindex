@@ -330,6 +330,7 @@ dialog::backdrop { background: rgba(2,10,14,.62); backdrop-filter: blur(3px); }
 .auth-main { display:flex; flex-direction:column; justify-content:center; }
 .auth-main form { display:grid; gap:14px; }
 .auth-main form > label:not(.consent-row) { display:grid; gap:6px; color:var(--ink-2); font-size:12px; font-weight:700; }
+.auth-main form #specialtyField > label { display:grid; gap:6px; color:var(--ink-2); font-size:12px; font-weight:700; }
 .auth-main input:not([type="checkbox"]), .auth-main select { width:100%; min-height:44px; border:1px solid #c6dcd8; border-radius:9px; padding:10px 11px; color:var(--ink); background:#fbfdfd; font-size:14px; }
 .auth-main input:focus, .auth-main select:focus { outline:2px solid rgba(17,157,140,.22); border-color:var(--accent); }
 .consent-row { display:flex; gap:9px; align-items:flex-start; color:var(--muted); font-size:11px; line-height:1.4; }
