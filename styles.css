@@ -765,7 +765,7 @@ footer { background: #F6F7EF; border-top-color: #D9DDEA; }
   .compare-results { box-shadow: 0 -14px 38px rgba(8,17,78,.18); }
 }
 
-/* Layout v0.13 · ficha editorial en escritorio, acceso directo en móvil */
+/* Layout v0.14 · ficha clínica compacta en escritorio, sin espacios muertos */
 .mobile-menu-button, .mobile-menu { display: none; }
 
 @media (min-width: 901px) {
@@ -783,31 +783,40 @@ footer { background: #F6F7EF; border-top-color: #D9DDEA; }
   #detailDialog .detail-action { padding: 7px 11px; }
   #detailDialog .detail-body {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 315px;
+    grid-template-columns: minmax(0, 1fr) 330px;
     grid-template-areas:
       "callout micro"
-      "effects snapshot"
+      "effects micro"
+      "snapshot micro"
       "studies regimen"
       "precautions update"
       "adverse .";
-    column-gap: 34px;
-    row-gap: 22px;
+    column-gap: 30px;
+    row-gap: 18px;
     align-items: start;
     padding: 34px 42px 46px;
   }
-  #detailDialog .clinical-callout { grid-area: callout; margin: 0; }
+  #detailDialog .clinical-callout {
+    grid-area: callout;
+    margin: 0;
+    padding: 5px 0 5px 18px;
+  }
+  #detailDialog .clinical-callout p { font-size: 19px; line-height: 1.42; }
+  #detailDialog .clinical-callout small { font-size: 13px; line-height: 1.5; }
+  #detailDialog .section-kicker { font-size: 12px; }
   #detailDialog .effect-panel { grid-area: effects; margin: 0; }
   #detailDialog .micrograph-panel {
     grid-area: micro;
     grid-template-columns: 1fr;
     margin: 0;
     align-self: start;
-    position: sticky;
-    top: 18px;
+    position: static;
   }
-  #detailDialog .micrograph-panel img { height: 182px; }
+  #detailDialog .micrograph-panel img { height: 190px; }
+  #detailDialog .micrograph-panel figcaption { padding: 18px 20px 19px; }
+  #detailDialog .micrograph-panel p { margin-top: 10px; font-size: 12px; }
   #detailDialog .clinical-summary { grid-area: snapshot; margin: 0; }
-  #detailDialog .clinical-summary .summary-heading p { display: none; }
+  #detailDialog .clinical-summary .summary-heading p { display: block; margin: 5px 0 13px; font-size: 13px; }
   #detailDialog .clinical-summary .detail-grid { grid-template-columns: 1fr; gap: 9px; }
   #detailDialog .primary-grid .detail-stat:first-child { grid-column: auto; }
   #detailDialog .regimen-section { grid-area: regimen; padding-top: 0; }

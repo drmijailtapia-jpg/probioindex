@@ -638,13 +638,63 @@ const relationStudyTypes = item => new Set(efficacyStudyIndexes(item).map(index 
   const study = item.studies[index];
   return isMetaAnalysis(study) ? "meta" : isRandomizedTrial(study) ? "rct" : "other";
 }));
-const recordUrl = item => {
+const slugify = value => String(value || "")
+  .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+  .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+const strainSlug = item => slugify(`${item.genus} ${item.species} ${item.strain}`);
+const conditionSlug = item => slugify(item.condition);
+const recordPath = item => `/cepas/${strainSlug(item)}/${conditionSlug(item)}`;
+const appUrl = path => {
   const url = new URL(window.location.href);
-  url.searchParams.set("record", item.id);
+  url.pathname = path;
+  url.searchParams.delete("record");
   if (state.lang === "en") url.searchParams.set("lang", "en"); else url.searchParams.delete("lang");
-  return url.toString();
+  return url;
 };
+const recordUrl = item => appUrl(recordPath(item)).toString();
+const recordFromUrl = url => {
+  const legacyId = url.searchParams.get("record");
+  if (legacyId) return evidenceWithEfficacy.find(item => item.id === legacyId) || null;
+  const parts = url.pathname.split("/").filter(Boolean).map(decodeURIComponent);
+  if (parts[0] !== "cepas" || parts.length < 3) return null;
+  const strain = parts[1], condition = parts.slice(2).join("/");
+  return evidenceWithEfficacy.find(item => strainSlug(item) === strain && conditionSlug(item) === condition) || null;
+};
+const appRootUrl = () => appUrl("/").toString();
 const evidenceWithEfficacy = evidence.filter(item => (item.studies || []).some(study => !isSafetyStudy(study) && isFavorableStudy(study)));
+function updateModeControls() {
+  $$(".mode-switch button").forEach(button => {
+    const active = button.dataset.mode === state.mode;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-selected", String(active));
+  });
+}
+function applyBrowseRoute(url) {
+  const parts = url.pathname.split("/").filter(Boolean).map(decodeURIComponent);
+  if (parts[0] === "cepas" && parts.length === 2) {
+    const item = evidenceWithEfficacy.find(record => strainSlug(record) === parts[1]);
+    if (!item) return false;
+    state.mode = "strain";
+    state.query = `${item.genus} ${item.species} ${item.strain}`;
+    state.selectedCondition = "";
+    $("#searchInput").value = state.query;
+    updateModeControls();
+    render();
+    return true;
+  }
+  if (parts[0] === "condiciones" && parts.length === 2) {
+    const item = evidenceWithEfficacy.find(record => conditionSlug(record) === parts[1]);
+    if (!item) return false;
+    state.mode = "condition";
+    state.query = "";
+    state.selectedCondition = item.condition;
+    $("#searchInput").value = "";
+    updateModeControls();
+    render();
+    return true;
+  }
+  return false;
+}
 const neutralValue = value => {
   if (!value) return "";
   return /resultados mixtos|mixed results|señal|signal|sin beneficio|no consistent benefit|no compensa|no confirmad|not confirmed|no estandarizable|not standardizable|no estimable|not estimable|no aplica|not applicable|no aplicable|no disponible|not available|no publicado|not published|sin estimación|without estimate|diferencia favorable|favorable difference|resultado primario no significativo|primary outcome not significant/i.test(value) ? "" : value;
@@ -913,6 +963,8 @@ function updateSuggestions() {
 function openDetail(id, syncUrl = true) {
   const item = evidenceWithEfficacy.find(x => x.id === id);
   if (!item) return;
+  document.title = `ProbioIndex — ${item.genus} ${item.species} ${item.strain} · ${localize(item,"condition")}`;
+  document.querySelector('meta[name="description"]')?.setAttribute("content", `Evidencia por cepa: ${item.genus} ${item.species} ${item.strain} en ${localize(item,"condition")}. Estudios, dosis y seguridad en ProbioIndex.`);
   const safety = safetyFor(item);
   const safetyEn = safetyForEnglish(item);
   const adverse = item.adverse || safety.adverse;
@@ -1194,7 +1246,15 @@ $("#mobileMethod").addEventListener("click", () => { closeMobileMenu(); openInfo
 $("#mobileSafety").addEventListener("click", () => { closeMobileMenu(); openInfo("safety"); });
 $("#mobileLanguage").addEventListener("click", () => { closeMobileMenu(); $("#languageButton").click(); });
 document.addEventListener("click", event => { if (!event.target.closest(".mobile-menu") && !event.target.closest("#mobileMenuButton")) closeMobileMenu(); });
-$("#languageButton").addEventListener("click",()=>{state.lang=state.lang==="es"?"en":"es";const url=new URL(window.location.href);if(state.lang==="en")url.searchParams.set("lang","en");else url.searchParams.delete("lang");history.replaceState(history.state,"",url);applyLanguage();const record=url.searchParams.get("record");if(record&&$("#detailDialog").open)openDetail(record,false);});
+$("#languageButton").addEventListener("click",()=>{
+  state.lang=state.lang==="es"?"en":"es";
+  const url=new URL(window.location.href);
+  if(state.lang==="en") url.searchParams.set("lang","en"); else url.searchParams.delete("lang");
+  history.replaceState(history.state,"",url);
+  applyLanguage();
+  const record=recordFromUrl(url);
+  if(record&&$("#detailDialog").open) openDetail(record.id,false);
+});
 $$('[data-close]').forEach(button=>button.addEventListener("click",()=>button.closest("dialog").close()));
 document.addEventListener("keydown",event=>{if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==="k"){event.preventDefault();$("#searchInput").focus();}});
 
@@ -1202,10 +1262,24 @@ $("#mexicoCount").textContent=evidenceWithEfficacy.filter(isMexicoAvailable).len
 $("#totalRelations").textContent=evidenceWithEfficacy.length;
 $("#totalEntities").textContent=new Set(evidenceWithEfficacy.map(x=>`${x.genus}|${x.species}|${x.strain}`)).size;
 $("#totalContexts").textContent=new Set(evidenceWithEfficacy.map(x=>x.condition)).size;
-$("#detailDialog").addEventListener("close",()=>{const url=new URL(window.location.href);if(url.searchParams.has("record")){url.searchParams.delete("record");history.replaceState({},"",url);}});
-window.addEventListener("popstate",()=>{const id=new URL(window.location.href).searchParams.get("record");if(id)openDetail(id,false);else if($("#detailDialog").open)$("#detailDialog").close();});
+$("#detailDialog").addEventListener("close",()=>{
+  const record=recordFromUrl(new URL(window.location.href));
+  if(record) history.replaceState({},"",appRootUrl());
+  document.title = "ProbioIndex — Evidencia por cepa";
+  document.querySelector('meta[name="description"]')?.setAttribute("content", "Base clínica independiente de evidencia sobre probióticos, organizada por cepa exacta, indicación y población adulta o pediátrica.");
+});
+window.addEventListener("popstate",()=>{
+  const url = new URL(window.location.href);
+  const record=recordFromUrl(url);
+  if(record) openDetail(record.id,false);
+  else {
+    if($("#detailDialog").open) $("#detailDialog").close();
+    if(!applyBrowseRoute(url)) render();
+  }
+});
 const initialUrl=new URL(window.location.href);
 if(initialUrl.searchParams.get("lang")==="en"){state.lang="en";applyLanguage();}else render();
-const initialRecord=initialUrl.searchParams.get("record");
-if(initialRecord)requestAnimationFrame(()=>openDetail(initialRecord,false));
+const initialRecord=recordFromUrl(initialUrl);
+if(initialRecord) requestAnimationFrame(()=>openDetail(initialRecord.id,false));
+else applyBrowseRoute(initialUrl);
 setTimeout(()=>syncLibraryFromAccount(librarySession()),0);
