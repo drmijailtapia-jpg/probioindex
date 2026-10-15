@@ -329,12 +329,20 @@ function isMexicoAvailable(item) {
 
 const state = {mode:"strain", query:"", lang:"es", compareCondition:"", compareIds:[], selectedCondition:""};
 const favorites = new Set(JSON.parse(localStorage.getItem("probioindex-favorites") || "[]"));
+const favoriteStrains = new Set(JSON.parse(localStorage.getItem("probioindex-favorite-strains") || "[]"));
+const favoriteComparisons = new Set(JSON.parse(localStorage.getItem("probioindex-favorite-comparisons") || "[]"));
 let recentViews = JSON.parse(localStorage.getItem("probioindex-recent") || "[]");
 let syncedLibraryUserId = null;
 const compareSelection = [];
+const strainKey = item => `${item.genus}|${item.species}|${item.strain}`;
+const strainLibraryId = key => `strain:${key}`;
+const comparisonKey = ids => [...ids].sort().join("~");
+const comparisonLibraryId = key => `comparison:${key}`;
 
 function persistLibraryLocally() {
   localStorage.setItem("probioindex-favorites", JSON.stringify([...favorites]));
+  localStorage.setItem("probioindex-favorite-strains", JSON.stringify([...favoriteStrains]));
+  localStorage.setItem("probioindex-favorite-comparisons", JSON.stringify([...favoriteComparisons]));
   localStorage.setItem("probioindex-recent", JSON.stringify(recentViews));
 }
 
@@ -345,6 +353,8 @@ function localLibraryRows(userId) {
   const rows = new Map();
   const now = Date.now();
   favorites.forEach(recordId => rows.set(recordId, {user_id:userId,record_id:recordId,is_saved:true,updated_at:new Date().toISOString()}));
+  favoriteStrains.forEach(key => rows.set(strainLibraryId(key), {user_id:userId,record_id:strainLibraryId(key),is_saved:true,updated_at:new Date().toISOString()}));
+  favoriteComparisons.forEach(key => rows.set(comparisonLibraryId(key), {user_id:userId,record_id:comparisonLibraryId(key),is_saved:true,updated_at:new Date().toISOString()}));
   recentViews.forEach((recordId,index) => {
     const current = rows.get(recordId) || {user_id:userId,record_id:recordId,is_saved:false};
     current.last_opened_at = new Date(now - index * 1000).toISOString();
@@ -361,6 +371,8 @@ async function syncLibraryFromAccount(session) {
   const localOwner = localStorage.getItem("probioindex-library-owner");
   if (localOwner && localOwner !== userId) {
     favorites.clear();
+    favoriteStrains.clear();
+    favoriteComparisons.clear();
     recentViews = [];
     persistLibraryLocally();
   }
@@ -369,8 +381,14 @@ async function syncLibraryFromAccount(session) {
   const {data,error} = await client.from("user_library_items").select("record_id,is_saved,last_opened_at").eq("user_id",userId).order("last_opened_at",{ascending:false,nullsFirst:false});
   if (error || !data) return;
   favorites.clear();
-  data.filter(item=>item.is_saved).forEach(item=>favorites.add(item.record_id));
-  recentViews = data.filter(item=>item.last_opened_at).map(item=>item.record_id).slice(0,12);
+  favoriteStrains.clear();
+  favoriteComparisons.clear();
+  data.filter(item=>item.is_saved).forEach(item=>{
+    if (item.record_id.startsWith("strain:")) favoriteStrains.add(item.record_id.slice(7));
+    else if (item.record_id.startsWith("comparison:")) favoriteComparisons.add(item.record_id.slice(11));
+    else favorites.add(item.record_id);
+  });
+  recentViews = data.filter(item=>item.last_opened_at && !item.record_id.startsWith("strain:") && !item.record_id.startsWith("comparison:")).map(item=>item.record_id).slice(0,12);
   syncedLibraryUserId = userId;
   localStorage.setItem("probioindex-library-owner",userId);
   persistLibraryLocally();
@@ -389,9 +407,28 @@ async function clearRemoteRecent(recordIds) {
   await client.from("user_library_items").update({last_opened_at:null,updated_at:new Date().toISOString()}).eq("user_id",session.user.id).in("record_id",recordIds);
 }
 
+function toggleFavoriteStrain(item, button) {
+  const key = strainKey(item);
+  const wasSaved = favoriteStrains.has(key);
+  if (wasSaved) favoriteStrains.delete(key); else favoriteStrains.add(key);
+  persistLibraryLocally();
+  syncLibraryItem(strainLibraryId(key), {is_saved:!wasSaved, last_opened_at:null});
+  if (button) button.textContent = !wasSaved ? (state.lang === "en" ? "Strain saved" : "Cepa guardada") : (state.lang === "en" ? "Save strain" : "Guardar cepa");
+}
+
+function toggleFavoriteComparison(ids, button) {
+  if (!Array.isArray(ids) || ids.length !== 2) return;
+  const key = comparisonKey(ids);
+  const wasSaved = favoriteComparisons.has(key);
+  if (wasSaved) favoriteComparisons.delete(key); else favoriteComparisons.add(key);
+  persistLibraryLocally();
+  syncLibraryItem(comparisonLibraryId(key), {is_saved:!wasSaved, last_opened_at:null});
+  if (button) button.textContent = !wasSaved ? (state.lang === "en" ? "Comparison saved" : "Comparación guardada") : (state.lang === "en" ? "Save comparison" : "Guardar comparación");
+}
+
 window.addEventListener("probioindex:authchange", event => {
   const session = event.detail?.session;
-  if (!session?.user) { syncedLibraryUserId=null; if (localStorage.getItem("probioindex-library-owner")) { favorites.clear(); recentViews=[]; persistLibraryLocally(); localStorage.removeItem("probioindex-library-owner"); } return; }
+  if (!session?.user) { syncedLibraryUserId=null; if (localStorage.getItem("probioindex-library-owner")) { favorites.clear(); favoriteStrains.clear(); favoriteComparisons.clear(); recentViews=[]; persistLibraryLocally(); localStorage.removeItem("probioindex-library-owner"); } return; }
   if (syncedLibraryUserId !== session.user.id) syncLibraryFromAccount(session);
 });
 const latestReview = {
@@ -504,13 +541,14 @@ const micrographCatalog = {
 };
 function micrographFor(item){
   const text = `${item.genus||""} ${item.species||""}`.toLowerCase();
+  const genus = String(item.genus || "").toLowerCase();
   if(text.includes("akkermansia")) return micrographCatalog.akkermansia;
   if(text.includes("saccharomyces")) return micrographCatalog.saccharomyces;
   if(text.includes("bifidobacterium")) return micrographCatalog.bifidobacterium;
-  if(text.includes("weizmannia") || text.includes("bacillus") || text.includes("alkalihalobacillus")) return micrographCatalog.bacillus;
+  if(["lactobacillus", "lacticaseibacillus", "lactiplantibacillus", "limosilactobacillus"].some(name => genus.includes(name))) return micrographCatalog.lactobacilli;
+  if(genus.includes("weizmannia") || genus === "bacillus" || genus.includes("alkalihalobacillus")) return micrographCatalog.bacillus;
   if(text.includes("enterococcus")) return micrographCatalog.enterococcus;
   if(text.includes("escherichia")) return micrographCatalog.escherichia;
-  if(text.includes("lactobacillus") || text.includes("lacticaseibacillus") || text.includes("lactiplantibacillus") || text.includes("limosilactobacillus")) return micrographCatalog.lactobacilli;
   return null;
 }
 function micrographPanel(item){
@@ -728,8 +766,8 @@ function applyLanguage() {
   if (pulses[1]) pulses[1].lastChild.textContent = state.lang === "en" ? " exact strains or formulations" : " cepas o formulaciones exactas";
   if (pulses[2]) pulses[2].lastChild.textContent = state.lang === "en" ? " clinical contexts" : " contextos clínicos";
   $("#filterToggle span").textContent = state.lang === "en" ? "Filter evidence" : "Filtrar evidencia"; $("#clearFilters").textContent = state.lang === "en" ? "Clear" : "Limpiar";
-  $$(".mode-switch button")[0].textContent = state.lang === "en" ? "Strain → condition" : "Cepa → condición";
-  $$(".mode-switch button")[1].textContent = state.lang === "en" ? "Condition → strain" : "Condición → cepa";
+  $$(".mode-switch button")[0].textContent = state.lang === "en" ? "By strain" : "Por cepa";
+  $$(".mode-switch button")[1].textContent = state.lang === "en" ? "By condition" : "Por condición";
   $$(".mode-switch button")[2].textContent = state.lang === "en" ? "Functional foods" : "Alimentos funcionales";
   $$(".mode-switch button")[3].textContent = state.lang === "en" ? "Compare strains" : "Comparar cepas";
   const areaLabels = {Gastrointestinal:"Gastrointestinal","EII y pouchitis":"IBD and pouchitis","Salud urogenital":"Urogenital health","Salud oral":"Oral health","Hepatología":"Hepatology","Metabolismo y composición corporal":"Metabolism and body composition","Salud mental":"Mental health","Alergología e inmunología":"Allergy and immunology","Neurología y cognición":"Neurology and cognition","Seguridad":"Safety","Pediatría":"Pediatrics"};
@@ -739,6 +777,8 @@ function applyLanguage() {
   $$("legend").forEach(x=>x.textContent=tx(x.textContent));
   $$('input[name="population"]').forEach(x=>x.parentElement.lastChild.textContent=tx(x.value==="adult"?"Adultos":"Pediatría"));
   $$('input[name="availability"]').forEach(x=>x.parentElement.querySelector(".filter-label").textContent=state.lang === "en" ? "Available in Mexico" : "Disponible en México");
+  $("#libraryButton .desktop-icon-label").textContent = state.lang === "en" ? "My library" : "Mi biblioteca";
+  $("#safetyButton .desktop-icon-label").textContent = state.lang === "en" ? "Safety" : "Seguridad";
   const studyTypeLabels = {meta:["Meta-analyses","Metaanálisis"],rct:["RCTs","ECA"],other:["Other studies","Otros estudios"]};
   $$("input[name='studyType']").forEach(x=>x.parentElement.lastChild.textContent=studyTypeLabels[x.value][state.lang==="en"?0:1]);
   const legendLabels = ["Población","Disponibilidad","Tipo de estudio","Área clínica","Objetivo"];
@@ -822,7 +862,29 @@ function matchesSearch(item, query) {
   return expandedSearchTerms(query).some(term => haystack.includes(term));
 }
 
+function directMatch(item, query) {
+  if (!query) return true;
+  const directFields = state.mode === "condition"
+    ? [item.condition, item.conditionShort, item.en?.condition, item.en?.conditionShort]
+    : [item.genus, item.species, item.strain, ...(item.aliases || []), item.former || ""];
+  const haystack = searchKey(directFields.filter(Boolean).join(" "));
+  return expandedSearchTerms(query).some(term => haystack.includes(term));
+}
+
+function conditionGroup(item) {
+  const condition = searchKey(`${item.condition || ""} ${item.conditionShort || ""}`);
+  if (/(^| )sii( |$)|sindrome de intestino irritable|irritable bowel syndrome|ibs/.test(condition)) {
+    return {
+      id: "sii",
+      label: state.lang === "en" ? "Irritable bowel syndrome (IBS)" : "Síndrome de intestino irritable (SII)",
+      isSii: true
+    };
+  }
+  return {id: item.condition, label: localize(item, "condition"), isSii: false};
+}
+
 function clinicalArea(item) {
+  if (item.area === "Pediatría") return "Gastrointestinal";
   if (item.area) return item.area;
   if (item.status === "evitar" || item.id.includes("safety") || item.id.includes("icu")) return "Seguridad";
   return "Gastrointestinal";
@@ -834,12 +896,39 @@ function updateFilterSummary() {
   $("#filterToggle span").textContent = `${state.lang === "en" ? "Filters" : "Filtros"}${constraints ? ` (${constraints})` : ""}`;
 }
 
+function renderActiveFilters() {
+  const holder = $("#activeFilters");
+  if (!holder) return;
+  const groups = [
+    ["population", state.lang === "en" ? "Population" : "Población"],
+    ["studyType", state.lang === "en" ? "Study type" : "Tipo de estudio"],
+    ["area", state.lang === "en" ? "Clinical area" : "Área clínica"],
+    ["intent", state.lang === "en" ? "Intent" : "Objetivo"]
+  ];
+  const chips = groups.map(([name,label]) => {
+    const chosen = activeValues(name), total = $$(`input[name="${name}"]`).length;
+    if (chosen.length === total) return "";
+    const names = chosen.map(value => name === "population" ? tx(value === "adult" ? "Adultos" : "Pediatría") : tx(value)).join(", ");
+    return `<button class="filter-chip" data-clear-filter="${name}">${label}: ${names || (state.lang === "en" ? "none" : "ninguno")} <b aria-hidden="true">×</b></button>`;
+  });
+  if (activeValues("availability").includes("mexico")) chips.push(`<button class="filter-chip" data-clear-filter="availability">${state.lang === "en" ? "Available in Mexico" : "Disponible en México"} <b aria-hidden="true">×</b></button>`);
+  const visible = chips.filter(Boolean);
+  holder.hidden = visible.length === 0;
+  holder.innerHTML = visible.join("");
+  holder.querySelectorAll("[data-clear-filter]").forEach(button => button.addEventListener("click", () => {
+    const name = button.dataset.clearFilter;
+    $$(`input[name="${name}"]`).forEach(input => input.checked = name !== "availability");
+    render();
+  }));
+}
+
 function render() {
   document.body.classList.remove("compare-mode");
   updateFilterSummary();
   if (state.mode === "compare") { renderComparePage(); return; }
   if (state.mode === "foods") { renderFunctionalFoods(); return; }
   $(".workspace").classList.remove("foods-view","compare-view"); $(".filters").hidden=false;
+  renderActiveFilters();
   $(".results-header h2").lastChild.textContent = state.lang === "en" ? " clinical relations" : " relaciones clínicas";
   const q = searchKey(state.query.trim());
   const intents = activeValues("intent");
@@ -852,20 +941,24 @@ function render() {
     return (state.lang !== "en" || item.en) && (!q || matchesSearch(item,q)) && intents.includes(item.intent) && areas.includes(clinicalArea(item)) && populations.includes(ageGroup(item)) && studyTypes.some(type=>itemTypes.has(type)) && (!availability.includes("mexico") || isMexicoAvailable(item));
   });
   if (state.mode === "condition") { renderConditionIndex(filtered, q); return; }
-  $("#resultCount").textContent = filtered.length;
+  const direct = q ? filtered.filter(item => directMatch(item, q)) : filtered;
+  const related = q ? filtered.filter(item => !directMatch(item, q)) : [];
+  const ordered = [...direct, ...related];
+  $("#resultCount").textContent = ordered.length;
   $("#resultContext").textContent = state.query ? (state.lang==="en" ? `Results for “${state.query}”` : `Resultados para “${state.query}”`) : (state.lang==="en" ? "Overview" : "Vista general");
   const note = $("#translationNote");
   note.hidden = state.lang !== "en";
   if (state.lang === "en") note.textContent = "English edition: only clinically reviewed translations are shown. Remaining records stay available in Spanish while their editorial translation is completed.";
-  $("#results").innerHTML = filtered.map(item => `
+  const card = item => `
     <button class="evidence-card" data-id="${item.id}" aria-label="Abrir ficha de ${item.genus} ${item.species} ${item.strain}">
       <span class="card-strain">${microbeIcon(item)}<strong>${italicName(item)}</strong><small>${state.lang==="en" ? (item.en?.interventionType || "Strain-level identification") : (item.interventionType || item.former || "Identificación a nivel de cepa")}</small></span>
       <span class="card-data"><span>${localize(item,"conditionShort")}</span><small>${tx(clinicalArea(item))} · ${tx(item.intent)}</small></span>
       <span class="card-data duration"><span>${localize(item,"dose")}</span><small>${localize(item,"duration")}</small></span>
       <span class="arrow" aria-hidden="true">→</span>
-    </button>`).join("");
-  $("#emptyState").hidden = filtered.length > 0;
-  $("#results").hidden = filtered.length === 0;
+    </button>`;
+  $("#results").innerHTML = `${direct.map(card).join("")}${related.length ? `<p class="related-results-label">${state.lang === "en" ? "Related results" : "Resultados relacionados"}</p>${related.map(card).join("")}` : ""}`;
+  $("#emptyState").hidden = ordered.length > 0;
+  $("#results").hidden = ordered.length === 0;
   $$(".evidence-card").forEach(card => card.addEventListener("click", () => openDetail(card.dataset.id)));
 }
 
@@ -873,15 +966,16 @@ function renderConditionIndex(items, query) {
   const en = state.lang === "en";
   const groups = new Map();
   items.forEach(item => {
-    const key = item.condition;
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push(item);
+    const group = conditionGroup(item);
+    if (!groups.has(group.id)) groups.set(group.id, {group, records: []});
+    groups.get(group.id).records.push(item);
   });
-  const entries = [...groups.entries()].map(([id, records]) => ({
+  const entries = [...groups.entries()].map(([id, value]) => ({
     id,
-    label: localize(records[0], "condition"),
-    records,
-    strains: [...new Map(records.map(item => [`${item.genus}|${item.species}|${item.strain}`, item])).values()]
+    label: value.group.label,
+    isSii: value.group.isSii,
+    records: value.records,
+    strains: [...new Map(value.records.map(item => [`${item.genus}|${item.species}|${item.strain}`, item])).values()]
   })).sort((a,b) => a.label.localeCompare(b.label, state.lang));
   if (state.selectedCondition && !groups.has(state.selectedCondition)) state.selectedCondition = "";
   $("#resultCount").textContent = entries.length;
@@ -890,7 +984,9 @@ function renderConditionIndex(items, query) {
   const note = $("#translationNote");
   note.hidden = state.lang !== "en";
   if (state.lang === "en") note.textContent = "English edition: only clinically reviewed translations are shown. Remaining records stay available in Spanish while their editorial translation is completed.";
-  $("#results").innerHTML = entries.map(group => {
+  const directEntries = query ? entries.filter(group => group.records.some(item => directMatch(item, query))) : entries;
+  const relatedEntries = query ? entries.filter(group => !group.records.some(item => directMatch(item, query))) : [];
+  const renderGroup = group => {
     const open = state.selectedCondition === group.id;
     const areas = [...new Set(group.records.map(clinicalArea))].map(tx).join(" · ");
     return `<article class="condition-card ${open ? "open" : ""}">
@@ -898,9 +994,10 @@ function renderConditionIndex(items, query) {
         <span><small>${en ? "CLINICAL CONDITION" : "CONDICIÓN CLÍNICA"}</small><strong>${group.label}</strong><em>${group.strains.length} ${en ? (group.strains.length === 1 ? "strain with a record" : "strains with records") : (group.strains.length === 1 ? "cepa con ficha" : "cepas con ficha")}</em></span>
         <span class="condition-meta">${areas}<b aria-hidden="true">${open ? "−" : "+"}</b></span>
       </button>
-      ${open ? `<div class="condition-strains" aria-label="${en ? "Associated strains" : "Cepas asociadas"}">${group.strains.map(item => `<button class="condition-strain" data-id="${item.id}">${microbeIcon(item)}<span><strong>${italicName(item)}</strong><small>${localize(item,"dose")} · ${localize(item,"duration")}</small></span><b aria-hidden="true">→</b></button>`).join("")}</div>` : ""}
+      ${open ? `<div class="condition-strains" aria-label="${en ? "Associated strains" : "Cepas asociadas"}">${(group.isSii ? group.records : group.strains).map(item => `<button class="condition-strain" data-id="${item.id}">${microbeIcon(item)}<span><strong>${italicName(item)}</strong><small>${group.isSii ? `${localize(item,"conditionShort")} · ${localize(item,"population")}` : `${localize(item,"dose")} · ${localize(item,"duration")}`}</small></span><b aria-hidden="true">→</b></button>`).join("")}</div>` : ""}
     </article>`;
-  }).join("");
+  };
+  $("#results").innerHTML = `${directEntries.map(renderGroup).join("")}${relatedEntries.length ? `<p class="related-results-label">${en ? "Related results" : "Resultados relacionados"}</p>${relatedEntries.map(renderGroup).join("")}` : ""}`;
   $("#emptyState").hidden = entries.length > 0;
   $("#results").hidden = entries.length === 0;
   $$(".condition-card-trigger").forEach(button => button.addEventListener("click", () => {
@@ -926,7 +1023,10 @@ function renderComparePage() {
   $("#emptyState").hidden=true; $("#results").hidden=false;
   const select = (id,label,items,value="",placeholder="") => `<div class="compare-picker"><label for="${id}">${label}</label><select id="${id}"><option value="">${placeholder}</option>${items.map(item=>`<option value="${item.id}" ${item.id===value?"selected":""}>${item.label}</option>`).join("")}</select></div>`;
   const strainItems = options.map(item => ({id:item.id,label:`${item.genus} ${item.species} ${item.strain}`}));
-  $("#results").innerHTML = `<section class="compare-workspace"><div><span class="eyebrow">${en?"STRAIN COMPARATOR":"COMPARADOR DE CEPAS"}</span><h3>${en?"Compare strains in one indication":"Compara cepas en una misma indicación"}</h3><p>${en?"Choose an indication, then select two strains with a record in that exact clinical context.":"Elige una indicación y después dos cepas con una ficha en ese contexto clínico exacto."}</p></div><div class="compare-condition">${select("compareConditionSelect",en?"Clinical indication":"Indicación clínica",conditions,state.compareCondition,en?"Choose an indication":"Elige una indicación")}</div>${selectedCondition ? `<div class="compare-context"><span>${en?"Selected indication":"Indicación seleccionada"}</span><strong>${selectedCondition.label}</strong><small>${en?`${options.length} strains available`:`${options.length} cepas disponibles`}</small></div><div class="compare-selects">${select("compareA",en?"First strain":"Primera cepa",strainItems,selected.A?.id||"",en?"Choose a strain":"Elige una cepa")}${select("compareB",en?"Second strain":"Segunda cepa",strainItems,selected.B?.id||"",en?"Choose a strain":"Elige una cepa")}</div><button class="primary-cta" id="runCompare">${en?"Compare strains":"Comparar cepas"}</button><p class="compare-hint" id="compareHint"></p>` : `<p class="compare-hint">${en?"Only indications with at least two strain-level records are shown.":"Solo se muestran indicaciones con al menos dos fichas de cepa."}</p>`}</section>`;
+  const accountNote = librarySession()?.user
+    ? (en ? "Saved strains and comparisons are synced with your account." : "Las cepas y comparaciones guardadas se sincronizan con tu cuenta.")
+    : (en ? "Sign in to sync saved strains and comparisons across devices." : "Inicia sesión para sincronizar cepas y comparaciones guardadas entre dispositivos.");
+  $("#results").innerHTML = `<section class="compare-workspace"><div class="compare-intro"><span class="eyebrow">${en?"STRAIN COMPARATOR":"COMPARADOR DE CEPAS"}</span><h3>${en?"Compare strains in one indication":"Compara cepas en una misma indicación"}</h3><p>${en?"Choose an indication, then select two strains with a record in that exact clinical context.":"Elige una indicación y después dos cepas con una ficha en ese contexto clínico exacto."}</p></div><div class="compare-context-area"><div class="compare-condition">${select("compareConditionSelect",en?"Clinical indication":"Indicación clínica",conditions,state.compareCondition,en?"Choose an indication":"Elige una indicación")}</div>${selectedCondition ? `<div class="compare-context"><span>${en?"Selected indication":"Indicación seleccionada"}</span><strong>${selectedCondition.label}</strong><small>${en?`${options.length} strains available`:`${options.length} cepas disponibles`}</small></div>` : ""}</div>${selectedCondition ? `<div class="compare-selection-area"><div class="compare-selects">${select("compareA",en?"First strain":"Primera cepa",strainItems,selected.A?.id||"",en?"Choose a strain":"Elige una cepa")}${select("compareB",en?"Second strain":"Segunda cepa",strainItems,selected.B?.id||"",en?"Choose a strain":"Elige una cepa")}</div><div class="compare-actions"><button class="primary-cta" id="runCompare">${en?"Compare strains":"Comparar cepas"}</button><p class="compare-hint" id="compareHint"></p></div></div>` : `<p class="compare-hint compare-empty-note">${en?"Only indications with at least two strain-level records are shown.":"Solo se muestran indicaciones con al menos dos fichas de cepa."}</p>`}<p class="compare-account-note">${accountNote}</p></section>`;
   $("#compareConditionSelect").addEventListener("change", event => { state.compareCondition=event.target.value; state.compareIds=[]; renderComparePage(); });
   if (!selectedCondition) return;
   const updateStrain = (index, value) => { if(value && state.compareIds[1-index]===value){$("#compareHint").textContent=en?"Choose two different strains.":"Elige dos cepas distintas."; return;} state.compareIds[index]=value||null; renderComparePage(); };
@@ -987,7 +1087,7 @@ function openDetail(id, syncUrl = true) {
   $("#detailContent").innerHTML = `
     <div class="detail-head">
       <div class="detail-toolbar"><span>${tx(clinicalArea(item))} · ${tx(item.intent)} · ${tx(ageGroup(item)==="pediatric"?"Pediatría":"Adultos")}</span><button data-close aria-label="${state.lang==="en"?"Close":"Cerrar"}">×</button></div>
-      <div class="detail-actions"><button class="detail-action" id="favoriteDetail">${favorites.has(item.id)?(state.lang==="en"?"Saved":"Guardada"):(state.lang==="en"?"Save":"Guardar")}</button><button class="detail-action" id="compareDetail">${state.lang==="en"?"Compare":"Comparar"}</button><button class="detail-action" id="readingDetail">${state.lang==="en"?"Reading":"Lectura"}</button><button class="detail-action" id="shareDetail">${state.lang==="en"?"Share":"Compartir"}</button><button class="detail-action" id="printDetail">${state.lang==="en"?"Share PDF":"Compartir PDF"}</button><button class="detail-action" id="downloadPdfDetail">${state.lang==="en"?"Download PDF":"Descargar PDF"}</button></div>
+      <div class="detail-actions"><button class="detail-action" id="favoriteDetail">${favorites.has(item.id)?(state.lang==="en"?"Record saved":"Ficha guardada"):(state.lang==="en"?"Save record":"Guardar ficha")}</button><button class="detail-action" id="compareDetail">${state.lang==="en"?"Compare":"Comparar"}</button><button class="detail-action" id="shareDetail">${state.lang==="en"?"Share":"Compartir"}</button><div class="detail-menu"><button class="detail-action" id="detailMore" aria-expanded="false">${state.lang==="en"?"More":"Más"} ▾</button><div class="detail-menu-panel" id="detailMenuPanel" hidden><button id="favoriteStrainDetail">${favoriteStrains.has(strainKey(item))?(state.lang==="en"?"Strain saved":"Cepa guardada"):(state.lang==="en"?"Save strain":"Guardar cepa")}</button><button id="readingDetail">${state.lang==="en"?"Reading":"Lectura"}</button><button id="printDetail">${state.lang==="en"?"Share PDF":"Compartir PDF"}</button><button id="downloadPdfDetail">${state.lang==="en"?"Download PDF":"Descargar PDF"}</button></div></div></div>
       <h2>${italicName(item)}</h2><p>${localize(item,"condition")}</p>
     </div>
     <div class="detail-body">
@@ -1009,7 +1109,9 @@ function openDetail(id, syncUrl = true) {
       <p class="record-review-date">${state.lang==="en"?"Last documentary review:":"Última revisión documental:"} <time datetime="${latestReview.date}">${state.lang==="en"?latestReview.enDate:latestReview.esDate}</time></p>
     </div>`;
   dialog.querySelector("[data-close]").addEventListener("click", () => dialog.close());
-  dialog.querySelector("#favoriteDetail").addEventListener("click", () => { if(favorites.has(item.id)) favorites.delete(item.id); else favorites.add(item.id); persistLibraryLocally(); syncLibraryItem(item.id,{is_saved:favorites.has(item.id)}); dialog.querySelector("#favoriteDetail").textContent=favorites.has(item.id)?(state.lang==="en"?"Saved":"Guardada"):(state.lang==="en"?"Save":"Guardar"); });
+  dialog.querySelector("#favoriteDetail").addEventListener("click", () => { if(favorites.has(item.id)) favorites.delete(item.id); else favorites.add(item.id); persistLibraryLocally(); syncLibraryItem(item.id,{is_saved:favorites.has(item.id)}); dialog.querySelector("#favoriteDetail").textContent=favorites.has(item.id)?(state.lang==="en"?"Record saved":"Ficha guardada"):(state.lang==="en"?"Save record":"Guardar ficha"); });
+  dialog.querySelector("#favoriteStrainDetail").addEventListener("click", () => toggleFavoriteStrain(item, dialog.querySelector("#favoriteStrainDetail")));
+  dialog.querySelector("#detailMore").addEventListener("click", () => { const panel = dialog.querySelector("#detailMenuPanel"); panel.hidden = !panel.hidden; dialog.querySelector("#detailMore").setAttribute("aria-expanded", String(!panel.hidden)); });
   dialog.querySelector("#compareDetail").addEventListener("click", () => { state.mode="compare"; state.compareCondition=item.condition; state.compareIds=[item.id,null]; dialog.close(); $$(".mode-switch button").forEach(button=>{const active=button.dataset.mode==="compare";button.classList.toggle("active",active);button.setAttribute("aria-selected",String(active));}); render(); document.querySelector(".workspace").scrollIntoView({behavior:"smooth",block:"start"}); });
   dialog.querySelector("#readingDetail").addEventListener("click", () => { const isReading = dialog.classList.toggle("reading-mode"); dialog.querySelector("#readingDetail").textContent = isReading ? (state.lang==="en"?"Standard view":"Vista estándar") : (state.lang==="en"?"Reading":"Lectura"); });
   dialog.querySelector("#shareDetail").addEventListener("click", async () => { const url=recordUrl(item); const title=`ProbioIndex · ${item.genus} ${item.species} ${item.strain}`; if(navigator.share){try{await navigator.share({title,text:localize(item,"condition"),url});return;}catch(error){if(error.name==="AbortError")return;}} await navigator.clipboard.writeText(url); dialog.querySelector("#shareDetail").textContent=state.lang==="en"?"Link copied":"Enlace copiado"; });
@@ -1061,17 +1163,32 @@ function openLibrary() {
   const synced = Boolean(librarySession()?.user);
   const byId = id => evidenceWithEfficacy.find(item => item.id === id);
   const list = ids => ids.map(byId).filter(Boolean).map(item => `<button class="library-record" data-record="${item.id}">${microbeIcon(item)}<span><strong>${italicName(item)}</strong><small>${localize(item,"condition")}</small></span><b>→</b></button>`).join("");
+  const strains = [...favoriteStrains].map(key => evidenceWithEfficacy.find(item => strainKey(item) === key)).filter(Boolean);
+  const strainList = strains.map(item => `<button class="library-record" data-strain="${strainKey(item)}">${microbeIcon(item)}<span><strong>${italicName(item)}</strong><small>${en ? "All linked indications" : "Todas las indicaciones vinculadas"}</small></span><b>→</b></button>`).join("");
+  const comparisons = [...favoriteComparisons].map(key => key.split("~").map(byId).filter(Boolean)).filter(items => items.length === 2);
+  const comparisonList = comparisons.map(items => `<button class="library-record library-comparison" data-comparison="${comparisonKey(items.map(item => item.id))}"><span><strong>${items.map(italicName).join(" vs ")}</strong><small>${localize(items[0],"condition")}</small></span><b>↗</b></button>`).join("");
   const saved = [...favorites];
-  $("#infoContent").innerHTML = `<div class="info-kicker">${en?"PERSONAL WORKSPACE":"ESPACIO PERSONAL"}</div><h2>${en?"My library":"Mi biblioteca"}</h2><p class="library-intro">${synced ? (en?"Saved and recent records are synced with your professional account. No clinical searches are shared with sponsors.":"Las fichas guardadas y recientes se sincronizan con tu cuenta profesional. No se comparten búsquedas clínicas con patrocinadores.") : (en?"Saved and recent records stay on this device until you sign in.":"Las fichas guardadas y recientes permanecen en este dispositivo hasta que inicies sesión.")}</p><div class="library-columns"><section><div class="library-title"><h3>${en?"Saved":"Guardadas"}</h3><span>${saved.length}</span></div>${saved.length ? list(saved) : `<p class="library-empty">${en?"Save a record to create your first collection.":"Guarda una ficha para crear tu primera colección."}</p>`}</section><section><div class="library-title"><h3>${en?"Recent":"Recientes"}</h3>${recentViews.length ? `<button id="clearRecent" class="library-clear">${en?"Clear":"Limpiar"}</button>` : ""}</div>${recentViews.length ? list(recentViews) : `<p class="library-empty">${en?"Opened records will appear here.":"Aquí aparecerán las fichas que abras."}</p>`}</section></div>`;
+  $("#infoContent").innerHTML = `<div class="info-kicker">${en?"PERSONAL WORKSPACE":"ESPACIO PERSONAL"}</div><h2>${en?"My library":"Mi biblioteca"}</h2><p class="library-intro">${synced ? (en?"Saved records, strains, and comparisons are synced with your professional account.":"Las fichas, cepas y comparaciones guardadas se sincronizan con tu cuenta profesional.") : (en?"Saved items stay on this device until you sign in.":"Los elementos guardados permanecen en este dispositivo hasta que inicies sesión.")}</p><div class="library-columns library-columns-wide"><section><div class="library-title"><h3>${en?"Saved records":"Fichas guardadas"}</h3><span>${saved.length}</span></div>${saved.length ? list(saved) : `<p class="library-empty">${en?"Save an individual record to keep it here.":"Guarda una ficha individual para conservarla aquí."}</p>`}</section><section><div class="library-title"><h3>${en?"Saved strains":"Cepas guardadas"}</h3><span>${strains.length}</span></div>${strains.length ? strainList : `<p class="library-empty">${en?"Save a strain from any record to follow all of its indications.":"Guarda una cepa desde cualquier ficha para seguir todas sus indicaciones."}</p>`}</section><section><div class="library-title"><h3>${en?"Saved comparisons":"Comparaciones guardadas"}</h3><span>${comparisons.length}</span></div>${comparisons.length ? comparisonList : `<p class="library-empty">${en?"Save a completed comparison to reopen it later.":"Guarda una comparación terminada para volver a abrirla."}</p>`}</section><section><div class="library-title"><h3>${en?"Recent":"Recientes"}</h3>${recentViews.length ? `<button id="clearRecent" class="library-clear">${en?"Clear":"Limpiar"}</button>` : ""}</div>${recentViews.length ? list(recentViews) : `<p class="library-empty">${en?"Opened records will appear here.":"Aquí aparecerán las fichas que abras."}</p>`}</section></div>`;
   const dialog = $("#infoDialog");
   if (!dialog.open) dialog.showModal();
   $("#infoContent").querySelectorAll("[data-record]").forEach(button => button.addEventListener("click", () => { dialog.close(); openDetail(button.dataset.record); }));
+  $("#infoContent").querySelectorAll("[data-strain]").forEach(button => button.addEventListener("click", () => {
+    const item = evidenceWithEfficacy.find(record => strainKey(record) === button.dataset.strain);
+    if (!item) return;
+    dialog.close(); state.mode="strain"; state.query=`${item.genus} ${item.species} ${item.strain}`; state.selectedCondition=""; $("#searchInput").value=state.query; updateModeControls(); render(); window.scrollTo({top:0,behavior:"smooth"});
+  }));
+  $("#infoContent").querySelectorAll("[data-comparison]").forEach(button => button.addEventListener("click", () => {
+    const ids = button.dataset.comparison.split("~"); const items = ids.map(byId).filter(Boolean);
+    if (items.length !== 2) return;
+    dialog.close(); state.mode="compare"; state.compareCondition=items[0].condition; state.compareIds=ids; updateModeControls(); render(); requestAnimationFrame(()=>openCompare(ids));
+  }));
   $("#clearRecent")?.addEventListener("click", () => { const removed=[...recentViews]; recentViews = []; persistLibraryLocally(); clearRemoteRecent(removed); openLibrary(); });
 }
 
 function openCompare(selectedIds = state.compareIds){
   const items=selectedIds.map(id=>evidenceWithEfficacy.find(x=>x.id===id)).filter(Boolean), en=state.lang==="en";
   if(items.length!==2) return;
+  const key = comparisonKey(selectedIds);
   const studyLinks=x=>localizedStudies(x).slice(0,3).map(s=>`<a href="${s.url}" target="_blank" rel="noopener">${s.year} · ${s.design} ↗</a>`).join("");
   const rows=[
     [en?"Condition":"Indicación",...items.map(x=>localize(x,"condition")||"—")],
@@ -1083,8 +1200,8 @@ function openCompare(selectedIds = state.compareIds){
     [en?"Linked studies":"Estudios vinculados",...items.map(studyLinks)],
     [en?"Safety reported":"Seguridad reportada",...items.map(x=>(en?(x.en?.adverse||safetyForEnglish(x).adverse):(x.adverse||safetyFor(x).adverse)).join(" · "))]
   ];
-  $("#compareContent").innerHTML=`<div class="detail-head"><div class="detail-toolbar"><span>${en?"Strain comparison":"Comparación de cepas"}</span><button data-close aria-label="${en?"Close":"Cerrar"}">×</button></div><h2>${en?"Same clinical indication":"Misma indicación clínica"}</h2><p>${localize(items[0],"condition")}</p></div><div class="comparison-table-wrap"><table class="comparison-table"><thead><tr><th>${en?"Field":"Campo"}</th>${items.map(x=>`<th>${italicName(x)}</th>`).join("")}</tr></thead><tbody>${rows.map(row=>`<tr><th>${row[0]}</th><td>${row[1]}</td><td>${row[2]}</td></tr>`).join("")}</tbody></table></div><div class="compare-footer"><button class="primary-action" id="clearCompare">${en?"Start another comparison":"Nueva comparación"}</button></div>`;
-  $("#compareContent [data-close]").addEventListener("click",()=>$("#compareDialog").close()); $("#clearCompare").addEventListener("click",()=>{state.compareIds=[];compareSelection.length=0;$("#compareDialog").close();renderComparePage();}); $("#compareDialog").showModal();
+  $("#compareContent").innerHTML=`<div class="detail-head"><div class="detail-toolbar"><span>${en?"Strain comparison":"Comparación de cepas"}</span><button data-close aria-label="${en?"Close":"Cerrar"}">×</button></div><h2>${en?"Same clinical indication":"Misma indicación clínica"}</h2><p>${localize(items[0],"condition")}</p></div><div class="comparison-table-wrap"><table class="comparison-table"><thead><tr><th>${en?"Field":"Campo"}</th>${items.map(x=>`<th>${italicName(x)}</th>`).join("")}</tr></thead><tbody>${rows.map(row=>`<tr><th>${row[0]}</th><td>${row[1]}</td><td>${row[2]}</td></tr>`).join("")}</tbody></table></div><div class="compare-footer"><button class="detail-action" id="favoriteComparison">${favoriteComparisons.has(key)?(en?"Comparison saved":"Comparación guardada"):(en?"Save comparison":"Guardar comparación")}</button><button class="primary-action" id="clearCompare">${en?"Start another comparison":"Nueva comparación"}</button></div>`;
+  $("#compareContent [data-close]").addEventListener("click",()=>$("#compareDialog").close()); $("#favoriteComparison").addEventListener("click",()=>toggleFavoriteComparison(selectedIds,$("#favoriteComparison"))); $("#clearCompare").addEventListener("click",()=>{state.compareIds=[];compareSelection.length=0;$("#compareDialog").close();renderComparePage();}); $("#compareDialog").showModal();
 }
 
 function openInfo(type) {
