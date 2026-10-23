@@ -36,8 +36,9 @@
   const profileComplete = session => Boolean(session?.user?.user_metadata?.full_name && session?.user?.user_metadata?.occupation);
   function setSession(session) {
     currentSession = session;
-    document.documentElement.classList.toggle("auth-pending", !profileComplete(session));
-    document.documentElement.classList.toggle("auth-ready", profileComplete(session));
+    const ready = isDemoMode || profileComplete(session);
+    document.documentElement.classList.toggle("auth-pending", !ready);
+    document.documentElement.classList.toggle("auth-ready", ready);
     const button = document.querySelector("#accessButton");
     if (button) button.textContent = session ? (session.user.user_metadata?.full_name?.split(" ")[0] || text().access) : text().access;
     window.dispatchEvent(new CustomEvent("probioindex:authchange",{detail:{session}}));

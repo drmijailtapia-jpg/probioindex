@@ -1361,6 +1361,8 @@ function openAccess() {
 
 function applyDemoChrome() {
   if (!isDemoMode) return;
+  document.documentElement.classList.remove("auth-pending");
+  document.documentElement.classList.add("auth-ready");
   document.body.classList.add("demo-mode");
   $("#demoBanner").hidden = false;
   document.title = "ProbioIndex — Demo";
