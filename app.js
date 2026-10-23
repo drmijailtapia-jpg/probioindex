@@ -764,11 +764,9 @@ function applyLanguage() {
   document.documentElement.lang = state.lang;
   window.ProbioAuth?.setLanguage(state.lang);
   if (isDemoMode) {
-    $("#accessButton").textContent = state.lang === "en" ? "Create account" : "Crear cuenta";
     $("#demoBannerTitle").textContent = state.lang === "en" ? "Demo account" : "Cuenta de demostración";
     $("#demoBannerText").textContent = state.lang === "en" ? "Explore records, a sample library, and a comparison. Changes reset when reloaded." : "Explora fichas, una biblioteca y una comparación de ejemplo. Los cambios se restablecen al recargar.";
     $("#demoExit").textContent = state.lang === "en" ? "Go to site" : "Ir al sitio";
-    $("#demoCreateAccount").textContent = state.lang === "en" ? "Create account" : "Crear cuenta";
   }
   $("#methodButton").textContent = state.lang === "en" ? "Methodology" : "Metodología";
   $("#changesButton").textContent = state.lang === "en" ? "What's new" : "Novedades";
@@ -1200,7 +1198,7 @@ function openLibrary() {
   const intro = isDemoMode
     ? (en ? "This sample library includes saved records, strains, a comparison, and recent activity. It is not connected to an account and resets when reloaded." : "Esta biblioteca de ejemplo incluye fichas y cepas guardadas, una comparación y actividad reciente. No está conectada a una cuenta y se restablece al recargar.")
     : synced ? (en?"Saved records, strains, and comparisons are synced with your professional account.":"Las fichas, cepas y comparaciones guardadas se sincronizan con tu cuenta profesional.") : (en?"Saved items stay on this device until you sign in.":"Los elementos guardados permanecen en este dispositivo hasta que inicies sesión.");
-  const demoCta = isDemoMode ? `<div class="demo-library-cta"><span>${en?"DEMO ACCOUNT":"CUENTA DEMO"}</span><strong>${en?"Create an account to keep your own library":"Crea una cuenta para conservar tu propia biblioteca"}</strong><button type="button" id="demoLibrarySignup">${en?"Create account":"Crear cuenta"}</button></div>` : "";
+  const demoCta = "";
   $("#infoContent").innerHTML = `<div class="info-kicker">${isDemoMode ? (en?"DEMONSTRATION":"DEMOSTRACIÓN") : (en?"PERSONAL WORKSPACE":"ESPACIO PERSONAL")}</div><h2>${en?"My library":"Mi biblioteca"}</h2><p class="library-intro">${intro}</p>${demoCta}<div class="library-columns library-columns-wide"><section><div class="library-title"><h3>${en?"Saved records":"Fichas guardadas"}</h3><span>${saved.length}</span></div>${saved.length ? list(saved) : `<p class="library-empty">${en?"Save an individual record to keep it here.":"Guarda una ficha individual para conservarla aquí."}</p>`}</section><section><div class="library-title"><h3>${en?"Saved strains":"Cepas guardadas"}</h3><span>${strains.length}</span></div>${strains.length ? strainList : `<p class="library-empty">${en?"Save a strain from any record to follow all of its indications.":"Guarda una cepa desde cualquier ficha para seguir todas sus indicaciones."}</p>`}</section><section><div class="library-title"><h3>${en?"Saved comparisons":"Comparaciones guardadas"}</h3><span>${comparisons.length}</span></div>${comparisons.length ? comparisonList : `<p class="library-empty">${en?"Save a completed comparison to reopen it later.":"Guarda una comparación terminada para volver a abrirla."}</p>`}</section><section><div class="library-title"><h3>${en?"Recent":"Recientes"}</h3>${recentViews.length ? `<button id="clearRecent" class="library-clear">${en?"Clear":"Limpiar"}</button>` : ""}</div>${recentViews.length ? list(recentViews) : `<p class="library-empty">${en?"Opened records will appear here.":"Aquí aparecerán las fichas que abras."}</p>`}</section></div>`;
   const dialog = $("#infoDialog");
   if (!dialog.open) dialog.showModal();
@@ -1216,7 +1214,6 @@ function openLibrary() {
     dialog.close(); state.mode="compare"; state.compareCondition=items[0].condition; state.compareIds=ids; updateModeControls(); render(); requestAnimationFrame(()=>openCompare(ids));
   }));
   $("#clearRecent")?.addEventListener("click", () => { const removed=[...recentViews]; recentViews = []; persistLibraryLocally(); clearRemoteRecent(removed); openLibrary(); });
-  $("#demoLibrarySignup")?.addEventListener("click", () => window.ProbioAuth?.showSignUp?.());
 }
 
 function openCompare(selectedIds = state.compareIds){
@@ -1365,6 +1362,7 @@ function applyDemoChrome() {
   document.documentElement.classList.add("auth-ready");
   document.body.classList.add("demo-mode");
   $("#demoBanner").hidden = false;
+  $("#accessButton").hidden = true;
   document.title = "ProbioIndex — Demo";
   let robots = document.querySelector('meta[name="robots"]');
   if (!robots) { robots = document.createElement("meta"); robots.name = "robots"; document.head.appendChild(robots); }
@@ -1374,11 +1372,6 @@ function applyDemoChrome() {
 
 if (isDemoMode) {
   applyDemoChrome();
-  $("#accessButton").addEventListener("click", event => {
-    event.preventDefault(); event.stopImmediatePropagation();
-    window.ProbioAuth?.showSignUp?.();
-  }, true);
-  $("#demoCreateAccount").addEventListener("click", () => window.ProbioAuth?.showSignUp?.());
 }
 
 $("#searchInput").addEventListener("input", event => {state.query=event.target.value; updateSuggestions(); render();});

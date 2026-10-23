@@ -1,8 +1,8 @@
 (() => {
   const config = window.PROBIOINDEX_CONFIG || {};
-  const configured = Boolean(config.supabaseUrl && config.supabasePublishableKey && window.supabase?.createClient);
-  const client = configured ? window.supabase.createClient(config.supabaseUrl, config.supabasePublishableKey) : null;
   const isDemoMode = /^\/demo\/?$/.test(window.location.pathname);
+  const configured = Boolean(config.supabaseUrl && config.supabasePublishableKey && window.supabase?.createClient);
+  const client = configured && !isDemoMode ? window.supabase.createClient(config.supabaseUrl, config.supabasePublishableKey) : null;
   let lang = "es", currentSession = null, mode = "signin";
   const text = () => lang === "en" ? {
     access:"Account", kicker:"Professional access", title:"Access ProbioIndex", intro:"Use Google or your email and password.",

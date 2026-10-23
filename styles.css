@@ -968,6 +968,11 @@ footer { background: #F6F7EF; border-top-color: #D9DDEA; }
 .hero-index .hero-logo { display:flex; flex-direction:column; align-items:center; gap:0; color:#08114E; font-family:Sora,sans-serif; font-size:16px; line-height:.92; letter-spacing:-.075em; text-align:center; }
 .hero-index .hero-logo b { font-weight:800; }
 .hero-index .hero-logo strong { font-weight:500; }
+.hero-index .hero-brand-mark { width:78px; height:78px; gap:8px; }
+.hero-index .hero-brand-mark i { width:12px; background:#08114E; }
+.hero-index .hero-brand-mark i:nth-child(1) { height:38px; opacity:.58; }
+.hero-index .hero-brand-mark i:nth-child(2) { height:65px; }
+.hero-index .hero-brand-mark i:nth-child(3) { height:48px; opacity:.82; }
 .detail-menu-panel button { min-height:38px; border:0; border-bottom:1px solid #E4E6EE; padding:0 13px; color:#08114E; background:#fff; font-size:12px; font-weight:700; text-align:left; }
 .detail-menu-panel button:last-child { border-bottom:0; }
 .detail-menu-panel button:hover { background:#F4F5E8; }
@@ -1002,6 +1007,7 @@ footer { background: #F6F7EF; border-top-color: #D9DDEA; }
 .review-banner button { min-height:40px; border:1px solid #08114E; border-radius:999px; padding:0 15px; color:#fff; background:#08114E; font-size:12px; font-weight:800; white-space:nowrap; }
 .review-banner button:hover { color:#08114E; background:#BCC776; }
 .review-banner button span { display:inline; color:inherit; font-size:14px; letter-spacing:0; }
+.review-banner + .search-shell { margin-top:16px; }
 
 @media (max-width:720px) {
   .review-banner { grid-template-columns:38px minmax(0,1fr); gap:12px; padding:13px 14px; border-radius:15px; }
