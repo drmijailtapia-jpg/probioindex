@@ -2,6 +2,7 @@
   const config = window.PROBIOINDEX_CONFIG || {};
   const configured = Boolean(config.supabaseUrl && config.supabasePublishableKey && window.supabase?.createClient);
   const client = configured ? window.supabase.createClient(config.supabaseUrl, config.supabasePublishableKey) : null;
+  const isDemoMode = /^\/demo\/?$/.test(window.location.pathname);
   let lang = "es", currentSession = null, mode = "signin";
   const text = () => lang === "en" ? {
     access:"Account", kicker:"Professional access", title:"Access ProbioIndex", intro:"Use Google or your email and password.",
@@ -123,11 +124,12 @@
     if(!dialog.open)dialog.showModal();
   }
   function setLanguage(next){lang=next;setSession(currentSession);if(document.querySelector("#accessDialog")?.open){document.querySelector("#accessDialog").close();showAccount();}}
-  window.ProbioAuth={showAccount,setLanguage,client,getSession:()=>currentSession};
+  const showSignUp = () => { mode="signup"; showAccount(); };
+  window.ProbioAuth={showAccount,showSignUp,setLanguage,client,getSession:()=>currentSession};
   window.addEventListener("DOMContentLoaded",async()=>{
     document.querySelector("#accessButton")?.addEventListener("click",showAccount);
-    if(!client){setSession(null);showAccount();return;}
-    const {data:{session}}=await client.auth.getSession();setSession(session);if(session)await saveProfile(session);if(!profileComplete(session))showAccount();
-    client.auth.onAuthStateChange(async(event,session)=>{setSession(session);if(event==="PASSWORD_RECOVERY"){resetView();return;}if(session){await saveProfile(session);if(profileComplete(session)){if(document.querySelector("#accessDialog")?.open)document.querySelector("#accessDialog").close();}else showAccount();}else showAccount();});
+    if(!client){setSession(null);if(!isDemoMode)showAccount();return;}
+    const {data:{session}}=await client.auth.getSession();setSession(session);if(session)await saveProfile(session);if(!profileComplete(session) && !isDemoMode)showAccount();
+    client.auth.onAuthStateChange(async(event,session)=>{setSession(session);if(event==="PASSWORD_RECOVERY"){resetView();return;}if(session){await saveProfile(session);if(profileComplete(session)){if(document.querySelector("#accessDialog")?.open)document.querySelector("#accessDialog").close();}else if(!isDemoMode)showAccount();}else if(!isDemoMode)showAccount();});
   });
 })();

@@ -327,11 +327,18 @@ function isMexicoAvailable(item) {
   return /HN019|K12|M18|BB-12|BB536|LP-33|HA4597|MucT pasteurizada|35624|DDS-1|Shirota|CNCM I-745|GG \(ATCC 53103\)|DSM 17938|GR-1 \+ RC-14|BPL1|PS128|KE-99|299v/.test([item.genus,item.species,item.strain].join(" "));
 }
 
+const isDemoMode = /^\/demo\/?$/.test(window.location.pathname);
+const demoLibrary = {
+  records:["peds-sb-aad","peds-lgg-aad"],
+  strains:["Saccharomyces|boulardii|CNCM I-745","Lacticaseibacillus|rhamnosus|GG (ATCC 53103)"],
+  comparisons:["peds-lgg-aad~peds-sb-aad"],
+  recent:["i31-ibs","peds-sb-aad"]
+};
 const state = {mode:"strain", query:"", lang:"es", compareCondition:"", compareIds:[], selectedCondition:""};
-const favorites = new Set(JSON.parse(localStorage.getItem("probioindex-favorites") || "[]"));
-const favoriteStrains = new Set(JSON.parse(localStorage.getItem("probioindex-favorite-strains") || "[]"));
-const favoriteComparisons = new Set(JSON.parse(localStorage.getItem("probioindex-favorite-comparisons") || "[]"));
-let recentViews = JSON.parse(localStorage.getItem("probioindex-recent") || "[]");
+const favorites = new Set(isDemoMode ? demoLibrary.records : JSON.parse(localStorage.getItem("probioindex-favorites") || "[]"));
+const favoriteStrains = new Set(isDemoMode ? demoLibrary.strains : JSON.parse(localStorage.getItem("probioindex-favorite-strains") || "[]"));
+const favoriteComparisons = new Set(isDemoMode ? demoLibrary.comparisons : JSON.parse(localStorage.getItem("probioindex-favorite-comparisons") || "[]"));
+let recentViews = isDemoMode ? [...demoLibrary.recent] : JSON.parse(localStorage.getItem("probioindex-recent") || "[]");
 let syncedLibraryUserId = null;
 const compareSelection = [];
 const strainKey = item => `${item.genus}|${item.species}|${item.strain}`;
@@ -340,14 +347,15 @@ const comparisonKey = ids => [...ids].sort().join("~");
 const comparisonLibraryId = key => `comparison:${key}`;
 
 function persistLibraryLocally() {
+  if (isDemoMode) return;
   localStorage.setItem("probioindex-favorites", JSON.stringify([...favorites]));
   localStorage.setItem("probioindex-favorite-strains", JSON.stringify([...favoriteStrains]));
   localStorage.setItem("probioindex-favorite-comparisons", JSON.stringify([...favoriteComparisons]));
   localStorage.setItem("probioindex-recent", JSON.stringify(recentViews));
 }
 
-function libraryClient() { return window.ProbioAuth?.client || null; }
-function librarySession() { return window.ProbioAuth?.getSession?.() || null; }
+function libraryClient() { return isDemoMode ? null : (window.ProbioAuth?.client || null); }
+function librarySession() { return isDemoMode ? null : (window.ProbioAuth?.getSession?.() || null); }
 
 function localLibraryRows(userId) {
   const rows = new Map();
@@ -427,21 +435,24 @@ function toggleFavoriteComparison(ids, button) {
 }
 
 window.addEventListener("probioindex:authchange", event => {
+  if (isDemoMode) { requestAnimationFrame(applyDemoChrome); return; }
   const session = event.detail?.session;
   if (!session?.user) { syncedLibraryUserId=null; if (localStorage.getItem("probioindex-library-owner")) { favorites.clear(); favoriteStrains.clear(); favoriteComparisons.clear(); recentViews=[]; persistLibraryLocally(); localStorage.removeItem("probioindex-library-owner"); } return; }
   if (syncedLibraryUserId !== session.user.id) syncLibraryFromAccount(session);
 });
 const latestReview = {
-  date:"2026-10-12",
-  esDate:"12 oct 2026",
-  enDate:"12 Oct 2026",
+  date:"2026-10-21",
+  esDate:"21 oct 2026",
+  enDate:"21 Oct 2026",
   updatesEs:[
-    "Se agregaron fichas de la formulación NCIMB/PXN de 14 cepas para SII-D, migraña episódica y crónica, depresión mayor coadyuvante y marcadores inflamatorios en esclerosis múltiple recurrente-remitente.",
-    "Se agregó documentación de un ECA y una revisión específica para <i>Bifidobacterium breve</i> M-16V en prematuros."
+    "Se agregó una ficha de <i>Lactiplantibacillus plantarum</i> HAC01 para glucosa posprandial y HbA1c en prediabetes.",
+    "Se agregó la combinación LGG + BB-12 para placa e inflamación gingival en la matriz oral estudiada.",
+    "Se agregó LC225 como péptidos de <i>Saccharomyces cerevisiae</i> para peso y adiposidad; la ficha separa la presentación local de los hidrolizados evaluados en ECA."
   ],
   updatesEn:[
-    "New records were added for the 14-strain NCIMB/PXN formulation: IBS-D, episodic and chronic migraine, major depression as an adjunct, and inflammatory markers in relapsing-remitting multiple sclerosis.",
-    "Documentation from one RCT and one strain-specific review was added for <i>Bifidobacterium breve</i> M-16V in preterm infants."
+    "A record was added for <i>Lactiplantibacillus plantarum</i> HAC01 and postprandial glucose and HbA1c in prediabetes.",
+    "The LGG + BB-12 combination was added for plaque and gingival inflammation in the studied oral matrix.",
+    "LC225 was added as <i>Saccharomyces cerevisiae</i> peptides for weight and adiposity; the record separates the local presentation from hydrolysates evaluated in RCTs."
   ]
 };
 const documentaryWatchlist = [{
@@ -689,7 +700,12 @@ const appUrl = path => {
   if (state.lang === "en") url.searchParams.set("lang", "en"); else url.searchParams.delete("lang");
   return url;
 };
-const recordUrl = item => appUrl(recordPath(item)).toString();
+const recordUrl = item => {
+  if (!isDemoMode) return appUrl(recordPath(item)).toString();
+  const url = appUrl("/demo");
+  url.searchParams.set("record",item.id);
+  return url.toString();
+};
 const recordFromUrl = url => {
   const legacyId = url.searchParams.get("record");
   if (legacyId) return evidenceWithEfficacy.find(item => item.id === legacyId) || null;
@@ -698,7 +714,7 @@ const recordFromUrl = url => {
   const strain = parts[1], condition = parts.slice(2).join("/");
   return evidenceWithEfficacy.find(item => strainSlug(item) === strain && conditionSlug(item) === condition) || null;
 };
-const appRootUrl = () => appUrl("/").toString();
+const appRootUrl = () => appUrl(isDemoMode ? "/demo" : "/").toString();
 const evidenceWithEfficacy = evidence.filter(item => (item.studies || []).some(study => !isSafetyStudy(study) && isFavorableStudy(study)));
 function updateModeControls() {
   $$(".mode-switch button").forEach(button => {
@@ -747,11 +763,22 @@ const ageGroup = item => item.ageGroup || "adult";
 function applyLanguage() {
   document.documentElement.lang = state.lang;
   window.ProbioAuth?.setLanguage(state.lang);
+  if (isDemoMode) {
+    $("#accessButton").textContent = state.lang === "en" ? "Create account" : "Crear cuenta";
+    $("#demoBannerTitle").textContent = state.lang === "en" ? "Demo account" : "Cuenta de demostración";
+    $("#demoBannerText").textContent = state.lang === "en" ? "Explore records, a sample library, and a comparison. Changes reset when reloaded." : "Explora fichas, una biblioteca y una comparación de ejemplo. Los cambios se restablecen al recargar.";
+    $("#demoExit").textContent = state.lang === "en" ? "Go to site" : "Ir al sitio";
+    $("#demoCreateAccount").textContent = state.lang === "en" ? "Create account" : "Crear cuenta";
+  }
   $("#methodButton").textContent = state.lang === "en" ? "Methodology" : "Metodología";
   $("#changesButton").textContent = state.lang === "en" ? "What's new" : "Novedades";
   $("#languageButton").textContent = state.lang === "en" ? "Español" : "English";
   $("#mainTitle").textContent = "ProbioIndex";
   $(".lede").textContent = state.lang === "en" ? "Updated evidence on probiotics, prebiotics, and functional foods." : "Evidencia actualizada sobre probióticos, prebióticos y alimentos funcionales.";
+  $("#reviewBannerKicker").textContent = state.lang === "en" ? "UPDATE · OCTOBER 2026" : "ACTUALIZACIÓN · OCTUBRE 2026";
+  $("#reviewBannerTitle").textContent = state.lang === "en" ? "New HAC01, LGG + BB-12, and LC225 records" : "Nuevas fichas para HAC01, LGG + BB-12 y LC225";
+  $("#reviewBannerText").textContent = state.lang === "en" ? "Clinical evidence traced to the strain, formulation, and studied matrix." : "Evidencia clínica trazada por cepa, formulación y matriz estudiada.";
+  $("#reviewBannerButton").innerHTML = state.lang === "en" ? 'View update <span aria-hidden="true">→</span>' : 'Ver actualización <span aria-hidden="true">→</span>';
   $("#mobileLibrary").textContent = state.lang === "en" ? "Saved and recent" : "Guardadas y recientes";
   $("#mobileChanges").textContent = state.lang === "en" ? "What’s new" : "Novedades";
   $("#mobileMethod").textContent = state.lang === "en" ? "Methodology" : "Metodología";
@@ -1023,9 +1050,11 @@ function renderComparePage() {
   $("#emptyState").hidden=true; $("#results").hidden=false;
   const select = (id,label,items,value="",placeholder="") => `<div class="compare-picker"><label for="${id}">${label}</label><select id="${id}"><option value="">${placeholder}</option>${items.map(item=>`<option value="${item.id}" ${item.id===value?"selected":""}>${item.label}</option>`).join("")}</select></div>`;
   const strainItems = options.map(item => ({id:item.id,label:`${item.genus} ${item.species} ${item.strain}`}));
-  const accountNote = librarySession()?.user
-    ? (en ? "Saved strains and comparisons are synced with your account." : "Las cepas y comparaciones guardadas se sincronizan con tu cuenta.")
-    : (en ? "Sign in to sync saved strains and comparisons across devices." : "Inicia sesión para sincronizar cepas y comparaciones guardadas entre dispositivos.");
+  const accountNote = isDemoMode
+    ? (en ? "You are using a local demo. Demo changes reset when the page reloads." : "Estás usando una demostración local. Los cambios se restablecen al recargar la página.")
+    : librarySession()?.user
+      ? (en ? "Saved strains and comparisons are synced with your account." : "Las cepas y comparaciones guardadas se sincronizan con tu cuenta.")
+      : (en ? "Sign in to sync saved strains and comparisons across devices." : "Inicia sesión para sincronizar cepas y comparaciones guardadas entre dispositivos.");
   $("#results").innerHTML = `<section class="compare-workspace"><div class="compare-intro"><span class="eyebrow">${en?"STRAIN COMPARATOR":"COMPARADOR DE CEPAS"}</span><h3>${en?"Compare strains in one indication":"Compara cepas en una misma indicación"}</h3><p>${en?"Choose an indication, then select two strains with a record in that exact clinical context.":"Elige una indicación y después dos cepas con una ficha en ese contexto clínico exacto."}</p></div><div class="compare-context-area"><div class="compare-condition">${select("compareConditionSelect",en?"Clinical indication":"Indicación clínica",conditions,state.compareCondition,en?"Choose an indication":"Elige una indicación")}</div>${selectedCondition ? `<div class="compare-context"><span>${en?"Selected indication":"Indicación seleccionada"}</span><strong>${selectedCondition.label}</strong><small>${en?`${options.length} strains available`:`${options.length} cepas disponibles`}</small></div>` : ""}</div>${selectedCondition ? `<div class="compare-selection-area"><div class="compare-selects">${select("compareA",en?"First strain":"Primera cepa",strainItems,selected.A?.id||"",en?"Choose a strain":"Elige una cepa")}${select("compareB",en?"Second strain":"Segunda cepa",strainItems,selected.B?.id||"",en?"Choose a strain":"Elige una cepa")}</div><div class="compare-actions"><button class="primary-cta" id="runCompare">${en?"Compare strains":"Comparar cepas"}</button><p class="compare-hint" id="compareHint"></p></div></div>` : `<p class="compare-hint compare-empty-note">${en?"Only indications with at least two strain-level records are shown.":"Solo se muestran indicaciones con al menos dos fichas de cepa."}</p>`}<p class="compare-account-note">${accountNote}</p></section>`;
   $("#compareConditionSelect").addEventListener("change", event => { state.compareCondition=event.target.value; state.compareIds=[]; renderComparePage(); });
   if (!selectedCondition) return;
@@ -1168,7 +1197,11 @@ function openLibrary() {
   const comparisons = [...favoriteComparisons].map(key => key.split("~").map(byId).filter(Boolean)).filter(items => items.length === 2);
   const comparisonList = comparisons.map(items => `<button class="library-record library-comparison" data-comparison="${comparisonKey(items.map(item => item.id))}"><span><strong>${items.map(italicName).join(" vs ")}</strong><small>${localize(items[0],"condition")}</small></span><b>↗</b></button>`).join("");
   const saved = [...favorites];
-  $("#infoContent").innerHTML = `<div class="info-kicker">${en?"PERSONAL WORKSPACE":"ESPACIO PERSONAL"}</div><h2>${en?"My library":"Mi biblioteca"}</h2><p class="library-intro">${synced ? (en?"Saved records, strains, and comparisons are synced with your professional account.":"Las fichas, cepas y comparaciones guardadas se sincronizan con tu cuenta profesional.") : (en?"Saved items stay on this device until you sign in.":"Los elementos guardados permanecen en este dispositivo hasta que inicies sesión.")}</p><div class="library-columns library-columns-wide"><section><div class="library-title"><h3>${en?"Saved records":"Fichas guardadas"}</h3><span>${saved.length}</span></div>${saved.length ? list(saved) : `<p class="library-empty">${en?"Save an individual record to keep it here.":"Guarda una ficha individual para conservarla aquí."}</p>`}</section><section><div class="library-title"><h3>${en?"Saved strains":"Cepas guardadas"}</h3><span>${strains.length}</span></div>${strains.length ? strainList : `<p class="library-empty">${en?"Save a strain from any record to follow all of its indications.":"Guarda una cepa desde cualquier ficha para seguir todas sus indicaciones."}</p>`}</section><section><div class="library-title"><h3>${en?"Saved comparisons":"Comparaciones guardadas"}</h3><span>${comparisons.length}</span></div>${comparisons.length ? comparisonList : `<p class="library-empty">${en?"Save a completed comparison to reopen it later.":"Guarda una comparación terminada para volver a abrirla."}</p>`}</section><section><div class="library-title"><h3>${en?"Recent":"Recientes"}</h3>${recentViews.length ? `<button id="clearRecent" class="library-clear">${en?"Clear":"Limpiar"}</button>` : ""}</div>${recentViews.length ? list(recentViews) : `<p class="library-empty">${en?"Opened records will appear here.":"Aquí aparecerán las fichas que abras."}</p>`}</section></div>`;
+  const intro = isDemoMode
+    ? (en ? "This sample library includes saved records, strains, a comparison, and recent activity. It is not connected to an account and resets when reloaded." : "Esta biblioteca de ejemplo incluye fichas y cepas guardadas, una comparación y actividad reciente. No está conectada a una cuenta y se restablece al recargar.")
+    : synced ? (en?"Saved records, strains, and comparisons are synced with your professional account.":"Las fichas, cepas y comparaciones guardadas se sincronizan con tu cuenta profesional.") : (en?"Saved items stay on this device until you sign in.":"Los elementos guardados permanecen en este dispositivo hasta que inicies sesión.");
+  const demoCta = isDemoMode ? `<div class="demo-library-cta"><span>${en?"DEMO ACCOUNT":"CUENTA DEMO"}</span><strong>${en?"Create an account to keep your own library":"Crea una cuenta para conservar tu propia biblioteca"}</strong><button type="button" id="demoLibrarySignup">${en?"Create account":"Crear cuenta"}</button></div>` : "";
+  $("#infoContent").innerHTML = `<div class="info-kicker">${isDemoMode ? (en?"DEMONSTRATION":"DEMOSTRACIÓN") : (en?"PERSONAL WORKSPACE":"ESPACIO PERSONAL")}</div><h2>${en?"My library":"Mi biblioteca"}</h2><p class="library-intro">${intro}</p>${demoCta}<div class="library-columns library-columns-wide"><section><div class="library-title"><h3>${en?"Saved records":"Fichas guardadas"}</h3><span>${saved.length}</span></div>${saved.length ? list(saved) : `<p class="library-empty">${en?"Save an individual record to keep it here.":"Guarda una ficha individual para conservarla aquí."}</p>`}</section><section><div class="library-title"><h3>${en?"Saved strains":"Cepas guardadas"}</h3><span>${strains.length}</span></div>${strains.length ? strainList : `<p class="library-empty">${en?"Save a strain from any record to follow all of its indications.":"Guarda una cepa desde cualquier ficha para seguir todas sus indicaciones."}</p>`}</section><section><div class="library-title"><h3>${en?"Saved comparisons":"Comparaciones guardadas"}</h3><span>${comparisons.length}</span></div>${comparisons.length ? comparisonList : `<p class="library-empty">${en?"Save a completed comparison to reopen it later.":"Guarda una comparación terminada para volver a abrirla."}</p>`}</section><section><div class="library-title"><h3>${en?"Recent":"Recientes"}</h3>${recentViews.length ? `<button id="clearRecent" class="library-clear">${en?"Clear":"Limpiar"}</button>` : ""}</div>${recentViews.length ? list(recentViews) : `<p class="library-empty">${en?"Opened records will appear here.":"Aquí aparecerán las fichas que abras."}</p>`}</section></div>`;
   const dialog = $("#infoDialog");
   if (!dialog.open) dialog.showModal();
   $("#infoContent").querySelectorAll("[data-record]").forEach(button => button.addEventListener("click", () => { dialog.close(); openDetail(button.dataset.record); }));
@@ -1183,6 +1216,7 @@ function openLibrary() {
     dialog.close(); state.mode="compare"; state.compareCondition=items[0].condition; state.compareIds=ids; updateModeControls(); render(); requestAnimationFrame(()=>openCompare(ids));
   }));
   $("#clearRecent")?.addEventListener("click", () => { const removed=[...recentViews]; recentViews = []; persistLibraryLocally(); clearRemoteRecent(removed); openLibrary(); });
+  $("#demoLibrarySignup")?.addEventListener("click", () => window.ProbioAuth?.showSignUp?.());
 }
 
 function openCompare(selectedIds = state.compareIds){
@@ -1325,6 +1359,26 @@ function openAccess() {
   dialog.showModal();
 }
 
+function applyDemoChrome() {
+  if (!isDemoMode) return;
+  document.body.classList.add("demo-mode");
+  $("#demoBanner").hidden = false;
+  document.title = "ProbioIndex — Demo";
+  let robots = document.querySelector('meta[name="robots"]');
+  if (!robots) { robots = document.createElement("meta"); robots.name = "robots"; document.head.appendChild(robots); }
+  robots.content = "noindex, nofollow";
+  $("#accessButton").textContent = state.lang === "en" ? "Create account" : "Crear cuenta";
+}
+
+if (isDemoMode) {
+  applyDemoChrome();
+  $("#accessButton").addEventListener("click", event => {
+    event.preventDefault(); event.stopImmediatePropagation();
+    window.ProbioAuth?.showSignUp?.();
+  }, true);
+  $("#demoCreateAccount").addEventListener("click", () => window.ProbioAuth?.showSignUp?.());
+}
+
 $("#searchInput").addEventListener("input", event => {state.query=event.target.value; updateSuggestions(); render();});
 $("#searchInput").addEventListener("keydown", event => {if(event.key==="Enter"){ $("#suggestions").classList.remove("visible"); document.querySelector(".workspace").scrollIntoView({behavior:"smooth"}); }});
 $$(".mode-switch button").forEach(button => button.addEventListener("click", () => {
@@ -1344,6 +1398,7 @@ $("#clearFilters").addEventListener("click",()=>{$$('input[type="checkbox"]').fo
 $("#resetSearch").addEventListener("click",()=>{state.query="";$("#searchInput").value="";$$('input[type="checkbox"]').forEach(input=>input.checked=input.name!=="availability");render();});
 $("#methodButton").addEventListener("click",()=>openInfo("method"));
 $("#changesButton").addEventListener("click",()=>openInfo("changes"));
+$("#reviewBannerButton").addEventListener("click",()=>openInfo("changes"));
 $("#libraryButton").addEventListener("click",openLibrary);
 $("#safetyButton").addEventListener("click",()=>openInfo("safety"));
 function closeMobileMenu() {

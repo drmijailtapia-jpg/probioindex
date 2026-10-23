@@ -5,7 +5,7 @@ const vm = require("node:vm");
 const root = __dirname;
 const context = { window: {} };
 vm.createContext(context);
-["data-v3.js", "data-v4.js", "data-v5.js", "data-v6.js", "data-v7.js"].forEach(file => {
+["data-v3.js", "data-v4.js", "data-v5.js", "data-v6.js", "data-v7.js", "data-v8.js"].forEach(file => {
   vm.runInContext(fs.readFileSync(path.join(root, file), "utf8"), context, { filename: file });
 });
 

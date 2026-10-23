@@ -41,6 +41,17 @@
       <button id="mobileLanguage">English</button>
     </div>
   </header>
+  <aside class="demo-banner" id="demoBanner" hidden aria-label="Modo demostración">
+    <div>
+      <span class="demo-badge">DEMO</span>
+      <strong id="demoBannerTitle">Cuenta de demostración</strong>
+      <p id="demoBannerText">Explora fichas, una biblioteca y una comparación de ejemplo. Los cambios se restablecen al recargar.</p>
+    </div>
+    <div class="demo-banner-actions">
+      <a href="/" id="demoExit">Ir al sitio</a>
+      <button type="button" id="demoCreateAccount">Crear cuenta</button>
+    </div>
+  </aside>
 
   <main>
     <section class="search-stage" aria-labelledby="mainTitle">
@@ -55,9 +66,19 @@
             <g class="microbe-rod microbe-rod-2"><rect x="42" y="9" width="34" height="12" rx="6"/><circle cx="49" cy="15" r="2"/><circle cx="68" cy="15" r="2"/></g>
             <g class="microbe-cocci"><circle cx="57" cy="42" r="7"/><circle cx="71" cy="43" r="7"/><circle cx="64" cy="54" r="7"/><circle cx="50" cy="53" r="7"/></g>
           </svg>
-          <span>PI</span>
+          <span class="hero-logo" aria-label="ProbioIndex"><b>Probio</b><strong>Index</strong></span>
         </div>
       </div>
+
+      <aside class="review-banner" aria-labelledby="reviewBannerTitle">
+        <div class="review-banner-mark" aria-hidden="true">+</div>
+        <div>
+          <span id="reviewBannerKicker">ACTUALIZACIÓN · OCTUBRE 2026</span>
+          <strong id="reviewBannerTitle">Nuevas fichas para HAC01, LGG + BB-12 y LC225</strong>
+          <p id="reviewBannerText">Evidencia clínica trazada por cepa, formulación y matriz estudiada.</p>
+        </div>
+        <button id="reviewBannerButton" type="button">Ver actualización <span aria-hidden="true">→</span></button>
+      </aside>
 
       <div class="search-shell">
         <div class="mode-switch" role="tablist" aria-label="Tipo de búsqueda">
@@ -71,7 +92,7 @@
           <input id="searchInput" type="search" autocomplete="off" placeholder="Busca SII, pouchitis, vaginosis…" aria-label="Buscar evidencia clínica">
           <kbd>⌘ K</kbd>
         </label>
-        <p class="last-updated">Última actualización: <time datetime="2026-10-12">12 oct 2026</time></p>
+        <p class="last-updated">Última actualización: <time datetime="2026-10-21">21 oct 2026</time></p>
         <div class="suggestions" id="suggestions" aria-label="Sugerencias de búsqueda"></div>
       </div>
 
@@ -161,7 +182,7 @@
 
   <footer>
     <p>Herramienta de apoyo para profesionales de la salud. No sustituye juicio clínico, diagnóstico ni tratamiento individualizado.</p>
-    <p>Última revisión editorial: <time datetime="2026-10-12">12 oct 2026</time></p>
+    <p>Última revisión editorial: <time datetime="2026-10-21">21 oct 2026</time></p>
   </footer>
 
   <dialog id="detailDialog" class="detail-dialog">
@@ -184,6 +205,7 @@
   <script src="data-v5.js"></script>
   <script src="data-v6.js"></script>
   <script src="data-v7.js"></script>
+  <script src="data-v8.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
