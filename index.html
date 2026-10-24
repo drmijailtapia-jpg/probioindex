@@ -9,14 +9,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=77">
 </head>
 <body>
   <header class="topbar">
     <a class="brand" href="#" aria-label="ProbioIndex, inicio">
       <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
       <span>ProbioIndex</span>
-      <small>v0.14 clínica</small>
+      <small>v0.15 clínica</small>
     </a>
     <nav class="top-actions" aria-label="Navegación principal">
       <button class="access-button" id="accessButton">Acceso</button>
@@ -67,9 +67,9 @@
       <aside class="review-banner" aria-labelledby="reviewBannerTitle">
         <div class="review-banner-mark" aria-hidden="true">+</div>
         <div>
-          <span id="reviewBannerKicker">ACTUALIZACIÓN · OCTUBRE 2026</span>
-          <strong id="reviewBannerTitle">Nuevas fichas para HAC01, LGG + BB-12 y LC225</strong>
-          <p id="reviewBannerText">Evidencia clínica trazada por cepa, formulación y matriz estudiada.</p>
+          <span id="reviewBannerKicker">ACTUALIZACIÓN · 24 OCT 2026</span>
+          <strong id="reviewBannerTitle">Resultados clínicos reorganizados en todas las fichas</strong>
+          <p id="reviewBannerText">Metaanálisis primero; cuando no existe, se muestra el ECA con mayor muestra.</p>
         </div>
         <button id="reviewBannerButton" type="button">Ver actualización <span aria-hidden="true">→</span></button>
       </aside>
@@ -86,7 +86,7 @@
           <input id="searchInput" type="search" autocomplete="off" placeholder="Busca SII, pouchitis, vaginosis…" aria-label="Buscar evidencia clínica">
           <kbd>⌘ K</kbd>
         </label>
-        <p class="last-updated">Última actualización: <time datetime="2026-10-21">21 oct 2026</time></p>
+        <p class="last-updated">Última actualización: <time datetime="2026-10-24">24 oct 2026</time></p>
         <div class="suggestions" id="suggestions" aria-label="Sugerencias de búsqueda"></div>
       </div>
 
@@ -176,7 +176,7 @@
 
   <footer>
     <p>Herramienta de apoyo para profesionales de la salud. No sustituye juicio clínico, diagnóstico ni tratamiento individualizado.</p>
-    <p>Última revisión editorial: <time datetime="2026-10-21">21 oct 2026</time></p>
+    <p>Última revisión editorial: <time datetime="2026-10-24">24 oct 2026</time></p>
   </footer>
 
   <dialog id="detailDialog" class="detail-dialog">
@@ -192,14 +192,14 @@
   </dialog>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
-  <script src="config.js"></script>
-  <script src="auth.js"></script>
-  <script src="data-v3.js"></script>
-  <script src="data-v4.js"></script>
-  <script src="data-v5.js"></script>
-  <script src="data-v6.js"></script>
-  <script src="data-v7.js"></script>
-  <script src="data-v8.js"></script>
-  <script src="app.js"></script>
+  <script src="config.js?v=77"></script>
+  <script src="auth.js?v=77"></script>
+  <script src="data-v3.js?v=77"></script>
+  <script src="data-v4.js?v=77"></script>
+  <script src="data-v5.js?v=77"></script>
+  <script src="data-v6.js?v=77"></script>
+  <script src="data-v7.js?v=77"></script>
+  <script src="data-v8.js?v=77"></script>
+  <script src="app.js?v=77"></script>
 </body>
 </html>

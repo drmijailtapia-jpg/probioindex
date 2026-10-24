@@ -9,11 +9,9 @@ vm.createContext(context);
   vm.runInContext(fs.readFileSync(path.join(root, file), "utf8"), context, { filename: file });
 });
 
-const favorableStudyPattern = /redu|menor|menos|mejor|mayor|aument|remisi|respuesta|respond|favorable|superior|alivi|recurr|resoluci|curaci|cultivo|absorci|señal adicional|or\s*1\.|rr\s*0\.|or\s*0\.|hr\s*0\.|nnt|90%|42\.9%|36\.4%|g\s*0\./i;
-const nonEfficacyPattern = /no reduj|no mejor|recuperación similar|similar frente|no demost|no alcanz|primarios negativos|negativ|did not|no effect|no significant|recovery similar|describe fungemia|sin recomendación/i;
 const isSafetyStudy = study => /seguridad|safety|farmacovigilancia/i.test(study.design || "");
 const records = (context.window.PROBIOCLIN_V3 || []).filter(item =>
-  (item.studies || []).some(study => !isSafetyStudy(study) && favorableStudyPattern.test(study.result || "") && !nonEfficacyPattern.test(study.result || ""))
+  (item.studies || []).some(study => !isSafetyStudy(study))
 );
 const slug = value => String(value || "").normalize("NFD")
   .replace(/[\u0300-\u036f]/g, "").toLowerCase()

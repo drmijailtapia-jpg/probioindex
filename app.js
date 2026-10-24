@@ -441,18 +441,14 @@ window.addEventListener("probioindex:authchange", event => {
   if (syncedLibraryUserId !== session.user.id) syncLibraryFromAccount(session);
 });
 const latestReview = {
-  date:"2026-10-21",
-  esDate:"21 oct 2026",
-  enDate:"21 Oct 2026",
+  date:"2026-10-24",
+  esDate:"24 oct 2026",
+  enDate:"24 Oct 2026",
   updatesEs:[
-    "Se agregó una ficha de <i>Lactiplantibacillus plantarum</i> HAC01 para glucosa posprandial y HbA1c en prediabetes.",
-    "Se agregó la combinación LGG + BB-12 para placa e inflamación gingival en la matriz oral estudiada.",
-    "Se agregó LC225 como péptidos de <i>Saccharomyces cerevisiae</i> para peso y adiposidad; la ficha separa la presentación local de los hidrolizados evaluados en ECA."
+    "Se reorganizaron las fichas para mostrar primero el resultado del metaanálisis o, si no existe, el ECA con mayor muestra."
   ],
   updatesEn:[
-    "A record was added for <i>Lactiplantibacillus plantarum</i> HAC01 and postprandial glucose and HbA1c in prediabetes.",
-    "The LGG + BB-12 combination was added for plaque and gingival inflammation in the studied oral matrix.",
-    "LC225 was added as <i>Saccharomyces cerevisiae</i> peptides for weight and adiposity; the record separates the local presentation from hydrolysates evaluated in RCTs."
+    "Records were reorganized to show the meta-analysis result first or, when none exists, the RCT with the largest sample."
   ]
 };
 const documentaryWatchlist = [{
@@ -588,17 +584,21 @@ const pediatricEnglish = {"Diarrea asociada a antibióticos en niños":"Antibiot
 const tx = value => state.lang === "en" ? (english[value] || pediatricEnglish[value] || value) : value;
 const localize = (item, field) => state.lang === "en" && item.en && item.en[field] ? item.en[field] : item[field];
 const clinicalField = value => String(value || "").replace(/;?\s*(en adultos aislados, )?el efecto fue impreciso\.?/gi, "").replace(/;?\s*(in adults considered separately, )?the effect was imprecise\.?/gi, "").trim();
-const favorableStudyPattern = /redu|menor|menos|mejor|mayor|aument|remisi|respuesta|respond|favorable|superior|alivi|recurr|resoluci|curaci|cultivo|absorci|señal adicional|or\s*1\.|rr\s*0\.|or\s*0\.|hr\s*0\.|nnt|90%|42\.9%|36\.4%|g\s*0\./i;
-const nonEfficacyPattern = /no reduj|no mejor|recuperación similar|similar frente|no demost|no alcanz|primarios negativos|negativ|did not|no effect|no significant|recovery similar|describe fungemia|sin recomendación/i;
-const isMetaAnalysis = study => /meta(?:análisis|-analysis)|revisión sistemática|systematic review/i.test(study.design || "");
+const isMetaAnalysis = study => /meta(?:análisis|-analysis)/i.test(study.design || "");
+const isSystematicReview = study => /revisión sistemática|systematic review/i.test(study.design || "");
 const isRandomizedTrial = study => /\bECA\b|\bRCT\b|randomi[sz]/i.test(study.design || "");
 const isSafetyStudy = study => /seguridad|safety|farmacovigilancia/i.test(study.design || "");
-const isFavorableStudy = study => favorableStudyPattern.test(study.result || "") && !nonEfficacyPattern.test(study.result || "");
-const studyPriority = study => isMetaAnalysis(study) ? 0 : isRandomizedTrial(study) ? 1 : 2;
+const studyPriority = study => isMetaAnalysis(study) ? 0 : isRandomizedTrial(study) ? 1 : isSystematicReview(study) ? 2 : 3;
+const studySampleSize = study => {
+  const values = String(study.n || "").match(/\d[\d,.]*/g) || [];
+  return values.reduce((largest,value) => Math.max(largest, Number(value.replace(/[,.]/g,"")) || 0), 0);
+};
 const efficacyStudyIndexes = item => (item.studies || [])
   .map((study,index)=>({study,index}))
-  .filter(({study}) => !isSafetyStudy(study) && (isMetaAnalysis(study) || isFavorableStudy(study)))
-  .sort((a,b) => studyPriority(a.study) - studyPriority(b.study) || Number(b.study.year || 0) - Number(a.study.year || 0))
+  .filter(({study}) => !isSafetyStudy(study))
+  .sort((a,b) => studyPriority(a.study) - studyPriority(b.study)
+    || (isRandomizedTrial(a.study) && isRandomizedTrial(b.study) ? studySampleSize(b.study) - studySampleSize(a.study) : 0)
+    || Number(b.study.year || 0) - Number(a.study.year || 0))
   .map(({index})=>index);
 const localizedStudies = item => {
   const studies = state.lang === "en" && item.en && item.en.studies ? item.en.studies : item.studies;
@@ -715,7 +715,7 @@ const recordFromUrl = url => {
   return evidenceWithEfficacy.find(item => strainSlug(item) === strain && conditionSlug(item) === condition) || null;
 };
 const appRootUrl = () => appUrl(isDemoMode ? "/demo" : "/").toString();
-const evidenceWithEfficacy = evidence.filter(item => (item.studies || []).some(study => !isSafetyStudy(study) && isFavorableStudy(study)));
+const evidenceWithEfficacy = evidence.filter(item => (item.studies || []).some(study => !isSafetyStudy(study)));
 function updateModeControls() {
   $$(".mode-switch button").forEach(button => {
     const active = button.dataset.mode === state.mode;
@@ -753,11 +753,55 @@ const neutralValue = value => {
   if (!value) return "";
   return /resultados mixtos|mixed results|señal|signal|sin beneficio|no consistent benefit|no compensa|no confirmad|not confirmed|no estandarizable|not standardizable|no estimable|not estimable|no aplica|not applicable|no aplicable|no disponible|not available|no publicado|not published|sin estimación|without estimate|diferencia favorable|favorable difference|resultado primario no significativo|primary outcome not significant/i.test(value) ? "" : value;
 };
+const neutralClinicalText = value => String(value || "")
+  .replace(/\b(?:China|México|Mexico):\s*/gi,"")
+  .replace(/señal favorable específica para ([^.]+)\.?/gi,"Se reportaron cambios en $1.")
+  .replace(/señal favorable para ([^.]+)\.?/gi,"Se reportaron cambios en $1.")
+  .replace(/señal global y /gi,"")
+  .replace(/como señal secundaria/gi,"como desenlace secundario")
+  .replace(/conclusión favorable[^.]*[.]?/gi,"")
+  .replace(/entre las señales más favorables por cepa/gi,"fue una de las cepas evaluadas")
+  .replace(/señal adicional en/gi,"Cambios reportados en")
+  .replace(/recomendación favorable específica de cepa/gi,"La guía evaluó esta cepa")
+  .replace(/señal de reducción/gi,"Reducción reportada")
+  .replace(/señal metabólica favorable/gi,"Cambios en desenlaces metabólicos")
+  .replace(/entre las cepas favorables/gi,"entre las cepas evaluadas")
+  .replace(/favourable signal|favorable signal/gi,"reported result")
+  .replace(/\b(?:señales|señal|signals?|signal)\b/gi,"resultado")
+  .replace(/[^.!?]*(?:mercado mexicano|presentación mexicana|formulación mexicana|disponibilidad mexicana|disponibilidad (?:pública )?en México|fuera de México|available in Mexico|Mexican market|Mexican (?:presentation|formulation)|local presentation|outside Mexico)[^.!?]*[.!?]?/gi, "")
+  .replace(/(?:escasean|faltan|se requieren|requiere) ensayos? (?:confirmatorios?|adicionales?)[^.!?]*[.!?]?/gi, "")
+  .replace(/;?\s*(?:la )?calidad y heterogeneidad limitan[^.!?]*[.!?]?/gi,"")
+  .replace(/;?\s*(?:study )?quality and heterogeneity limit[^.!?]*[.!?]?/gi,"")
+  .replace(/;?\s*(?:and )?requires? (?:independent )?confirmation[^.!?]*[.!?]?/gi,"")
+  .replace(/\b(?:favorable|desfavorable|prometedor(?:a)?|favourable|unfavourable|promising)\b/gi, "")
+  .replace(/\s+([,.;:])/g,"$1").replace(/([.;])\s*\1+/g,"$1").replace(/\s{2,}/g," ").trim();
+const studyDesignLabel = value => neutralClinicalText(value).replace(/\b(?:mexican[oa]?|chinese|mexicano|mexicana|chino|china)\b/gi,"").replace(/\s{2,}/g," ").trim();
+const quantitativeValue = value => {
+  const text = neutralClinicalText(value);
+  if (!/\d/.test(text)) return "";
+  const sampleOnly = /(?:pacientes?|participantes?|sujetos?|niños?|adultos?|aleatorizad|randomi[sz]ed|estudios?|trials?)\b/i.test(text)
+    && !/%|\b(?:RR|OR|HR|IC|CI|DM|MD|DME|SMD|NNT|NNH)\b|\bvs\.?\b|→|p\s*[<=>]|días?|days?|semanas?|weeks?|puntos?|points?/i.test(text);
+  return sampleOnly ? "" : text;
+};
 const reportedResult = item => {
   const lead = localizedStudies(item)[0];
   if (!lead) return "";
-  const n = lead.n && !/variable|no especificado/i.test(lead.n) ? `, n=${lead.n}` : "";
-  return `${lead.design}${n}, ${lead.year}: ${lead.result}`;
+  const result = neutralClinicalText(lead.result);
+  const outcome = neutralClinicalText(localize(item,"outcome")).split(/;|\./)[0];
+  const strain = `${item.genus} ${item.species} ${item.strain}`;
+  const noDifference = /sin (?:diferencia|superioridad|cambio)|no (?:mostró|demostró|alcanzó)|recuperación similar|primarios negativos|no significant|did not|recovery similar/i.test(result);
+  const lower = /redu|menor|menos|lower|decreas|\b(?:RR|OR|HR)\s*0[.,]/i.test(result);
+  const higher = /mayor|aument|mejor|higher|increas|improv|respuesta|resolución/i.test(result);
+  if (state.lang === "en") {
+    if (noDifference) return `${strain} did not show a difference in ${outcome ? outcome.toLowerCase() : "the measured clinical outcome"} versus the comparator.`;
+    if (lower) return `${strain} was associated with a reduction in ${outcome ? outcome.toLowerCase() : "the measured clinical outcome"} versus the comparator.`;
+    if (higher) return `${strain} was associated with a change in ${outcome ? outcome.toLowerCase() : "the measured clinical outcome"} versus the comparator.`;
+    return `The primary study evaluated ${outcome ? outcome.toLowerCase() : "the reported clinical outcome"} with ${strain}.`;
+  }
+  if (noDifference) return `${strain} no mostró diferencias en ${outcome ? outcome.toLowerCase() : "el desenlace clínico evaluado"} frente al comparador.`;
+  if (lower) return `${strain} se asoció con una reducción en ${outcome ? outcome.toLowerCase() : "el desenlace clínico evaluado"} frente al comparador.`;
+  if (higher) return `${strain} se asoció con un cambio en ${outcome ? outcome.toLowerCase() : "el desenlace clínico evaluado"} frente al comparador.`;
+  return `El estudio principal evaluó ${outcome ? outcome.toLowerCase() : "el desenlace clínico reportado"} con ${strain}.`;
 };
 const ageGroup = item => item.ageGroup || "adult";
 function applyLanguage() {
@@ -773,9 +817,9 @@ function applyLanguage() {
   $("#languageButton").textContent = state.lang === "en" ? "Español" : "English";
   $("#mainTitle").textContent = "ProbioIndex";
   $(".lede").textContent = state.lang === "en" ? "Updated evidence on probiotics, prebiotics, and functional foods." : "Evidencia actualizada sobre probióticos, prebióticos y alimentos funcionales.";
-  $("#reviewBannerKicker").textContent = state.lang === "en" ? "UPDATE · OCTOBER 2026" : "ACTUALIZACIÓN · OCTUBRE 2026";
-  $("#reviewBannerTitle").textContent = state.lang === "en" ? "New HAC01, LGG + BB-12, and LC225 records" : "Nuevas fichas para HAC01, LGG + BB-12 y LC225";
-  $("#reviewBannerText").textContent = state.lang === "en" ? "Clinical evidence traced to the strain, formulation, and studied matrix." : "Evidencia clínica trazada por cepa, formulación y matriz estudiada.";
+  $("#reviewBannerKicker").textContent = state.lang === "en" ? "UPDATE · 24 OCT 2026" : "ACTUALIZACIÓN · 24 OCT 2026";
+  $("#reviewBannerTitle").textContent = state.lang === "en" ? "Clinical results reorganized across all records" : "Resultados clínicos reorganizados en todas las fichas";
+  $("#reviewBannerText").textContent = state.lang === "en" ? "Meta-analysis first; when none exists, the RCT with the largest sample is shown." : "Metaanálisis primero; cuando no existe, se muestra el ECA con mayor muestra.";
   $("#reviewBannerButton").innerHTML = state.lang === "en" ? 'View update <span aria-hidden="true">→</span>' : 'Ver actualización <span aria-hidden="true">→</span>';
   $("#mobileLibrary").textContent = state.lang === "en" ? "Saved and recent" : "Guardadas y recientes";
   $("#mobileChanges").textContent = state.lang === "en" ? "What’s new" : "Novedades";
@@ -1102,10 +1146,13 @@ function openDetail(id, syncUrl = true) {
   recentViews = [item.id, ...recentViews.filter(viewedId => viewedId !== item.id)].slice(0, 12);
   persistLibraryLocally();
   syncLibraryItem(item.id,{last_opened_at:new Date().toISOString()});
+  const visibleStudies = localizedStudies(item);
+  const primaryStudy = visibleStudies[0];
+  const secondaryStudies = visibleStudies.slice(1);
   const primaryResult = reportedResult(item);
-  const effectEstimate = neutralValue(localize(item,"metric"));
-  const absoluteResult = neutralValue(localize(item,"absolute"));
-  const nntResult = neutralValue(item.nnt);
+  const effectEstimate = quantitativeValue(neutralValue(localize(item,"metric")));
+  const absoluteResult = quantitativeValue(neutralValue(localize(item,"absolute")));
+  const nntResult = quantitativeValue(neutralValue(item.nnt));
   const numericResults = [
     effectEstimate && `<div><small>${state.lang==="en"?"Reported estimate":"Estimación reportada"}</small><strong>${effectEstimate}</strong></div>`,
     absoluteResult && `<div><small>${state.lang==="en"?"Absolute result":"Resultado absoluto"}</small><strong>${absoluteResult}</strong></div>`,
@@ -1119,18 +1166,19 @@ function openDetail(id, syncUrl = true) {
     </div>
     <div class="detail-body">
       ${micrographPanel(item)}
-      <div class="clinical-callout"><span class="section-kicker">${state.lang==="en"?"PRIMARY STUDY RESULT":"RESULTADO PRINCIPAL DEL ESTUDIO"}</span><p>${primaryResult}</p><small>${state.lang==="en"?"Study-level information; not a recommendation or evidence grade.":"Información a nivel de estudio; no constituye recomendación ni graduación de la evidencia."}</small></div>
+      <div class="clinical-callout"><span class="section-kicker">${state.lang==="en"?"PRIMARY RESULT":"RESULTADO PRINCIPAL"}</span><p>${primaryResult}</p></div>
       ${numericResults ? `<div class="effect-panel neutral-results">${numericResults}</div>` : ""}
+      ${primaryStudy ? `<section class="primary-study-card"><div><small>${state.lang==="en"?"STUDY TYPE":"TIPO DE ESTUDIO"}</small><strong>${studyDesignLabel(primaryStudy.design)}</strong><span>${neutralClinicalText(primaryStudy.n)} · ${primaryStudy.year}</span></div><a href="${primaryStudy.url}" target="_blank" rel="noopener">${state.lang==="en"?"View source":"Ver fuente"} ↗</a><span class="citation-actions"><button class="copy-citation" data-citation="0" data-style="apa">APA</button><button class="copy-citation" data-citation="0" data-style="vancouver">Vancouver</button></span></section>` : ""}
       <section class="clinical-summary"><div class="summary-heading"><span>${state.lang==="en"?"CLINICAL SNAPSHOT":"RESUMEN CLÍNICO"}</span><p>${state.lang==="en"?"Who was studied, how the intervention was used, and what was measured.":"En quién se estudió, cómo se utilizó la intervención y qué se midió."}</p></div>
       <div class="detail-grid primary-grid">
-        <div class="detail-stat"><small>${state.lang==="en"?"Studied population":"Población estudiada"}</small><strong>${clinicalField(localize(item,"population"))}</strong></div>
+        <div class="detail-stat"><small>${state.lang==="en"?"Studied population":"Población estudiada"}</small><strong>${neutralClinicalText(clinicalField(localize(item,"population")))}</strong></div>
         <div class="detail-stat"><small>${state.lang==="en"?"Studied dose":"Dosis estudiada"}</small><strong>${localize(item,"dose")}</strong></div>
         <div class="detail-stat"><small>${state.lang==="en"?"Duration":"Duración"}</small><strong>${localize(item,"duration")}</strong></div>
         <div class="detail-stat"><small>${state.lang==="en"?"Measured outcome":"Desenlace evaluado"}</small><strong>${localize(item,"outcome")}</strong></div>
       </div>
       </section>
-      <section class="detail-section regimen-section"><h3>${state.lang==="en"?"Intervention details":"Detalle de la intervención"}</h3><dl class="regimen-list"><div><dt>${state.lang==="en"?"Intervention":"Intervención"}</dt><dd>${localize(item,"interventionType") || (state.lang==="en"?"Live microorganism":"Microorganismo vivo")}</dd></div><div><dt>${state.lang==="en"?"Regimen and context":"Pauta y contexto"}</dt><dd>${localize(item,"doseDetail")}</dd></div></dl></section>
-      <section class="detail-section studies-section"><h3>${state.lang==="en"?"Linked studies":"Estudios vinculados"}</h3><p class="study-order-note">${state.lang==="en"?"Meta-analyses are shown first, followed by randomized trials and other favorable studies.":"Se muestran primero los metaanálisis, después los ECA y, por último, otros estudios con resultados favorables."}</p><div class="study-table-wrap"><table class="study-table"><thead><tr><th>${state.lang==="en"?"Design":"Diseño"}</th><th>N / ${state.lang==="en"?"year":"año"}</th><th>${state.lang==="en"?"Reported result":"Resultado reportado"}</th></tr></thead><tbody>${localizedStudies(item).map((study, index) => `<tr><td><a href="${study.url}" target="_blank" rel="noopener">${study.design} ↗</a><span class="citation-actions"><button class="copy-citation" data-citation="${index}" data-style="apa">APA</button><button class="copy-citation" data-citation="${index}" data-style="vancouver">Vancouver</button></span></td><td>${study.n}<br><small>${study.year}</small></td><td>${study.result}</td></tr>`).join("")}</tbody></table></div></section>
+      <section class="detail-section regimen-section"><h3>${state.lang==="en"?"Intervention details":"Detalle de la intervención"}</h3><dl class="regimen-list"><div><dt>${state.lang==="en"?"Intervention":"Intervención"}</dt><dd>${localize(item,"interventionType") || (state.lang==="en"?"Live microorganism":"Microorganismo vivo")}</dd></div><div><dt>${state.lang==="en"?"Regimen and context":"Pauta y contexto"}</dt><dd>${neutralClinicalText(localize(item,"doseDetail"))}</dd></div></dl></section>
+      ${secondaryStudies.length ? `<section class="detail-section studies-section"><h3>${state.lang==="en"?"Other reported results":"Otros resultados reportados"}</h3><div class="study-table-wrap"><table class="study-table"><thead><tr><th>${state.lang==="en"?"Study":"Estudio"}</th><th>N / ${state.lang==="en"?"year":"año"}</th><th>${state.lang==="en"?"Reported result":"Resultado reportado"}</th></tr></thead><tbody>${secondaryStudies.map((study, index) => `<tr><td><a href="${study.url}" target="_blank" rel="noopener">${studyDesignLabel(study.design)} ↗</a><span class="citation-actions"><button class="copy-citation" data-citation="${index + 1}" data-style="apa">APA</button><button class="copy-citation" data-citation="${index + 1}" data-style="vancouver">Vancouver</button></span></td><td>${neutralClinicalText(study.n)}<br><small>${study.year}</small></td><td>${neutralClinicalText(study.result)}</td></tr>`).join("")}</tbody></table></div></section>` : ""}
       <section class="detail-section precautions-section"><h3>${state.lang==="en"?"Contraindications and precautions":"Contraindicaciones y precauciones"}</h3><ul>${(state.lang==="en" ? (item.en?.avoid || safetyEn.avoid) : avoid).map(x=>`<li>${x}</li>`).join("")}</ul></section>
       <section class="detail-section adverse-section"><h3>${state.lang==="en"?"Adverse effects and interactions":"Efectos adversos e interacciones"}</h3><ul>${(state.lang==="en" ? (item.en?.adverse || safetyEn.adverse) : adverse).map(x=>`<li>${x}</li>`).join("")}</ul><p><strong>${state.lang==="en"?"Interactions:":"Interacciones:"}</strong> ${state.lang==="en" ? (localize(item,"interactions") || safetyEn.interactions) : interactions}</p></section>
       <p class="record-review-date">${state.lang==="en"?"Last documentary review:":"Última revisión documental:"} <time datetime="${latestReview.date}">${state.lang==="en"?latestReview.enDate:latestReview.esDate}</time></p>
@@ -1144,7 +1192,6 @@ function openDetail(id, syncUrl = true) {
   dialog.querySelector("#shareDetail").addEventListener("click", async () => { const url=recordUrl(item); const title=`ProbioIndex · ${item.genus} ${item.species} ${item.strain}`; if(navigator.share){try{await navigator.share({title,text:localize(item,"condition"),url});return;}catch(error){if(error.name==="AbortError")return;}} await navigator.clipboard.writeText(url); dialog.querySelector("#shareDetail").textContent=state.lang==="en"?"Link copied":"Enlace copiado"; });
   dialog.querySelector("#printDetail").addEventListener("click", () => exportRecord(item, "share"));
   dialog.querySelector("#downloadPdfDetail").addEventListener("click", () => exportRecord(item, "download"));
-  const visibleStudies = localizedStudies(item);
   preloadStudyCitations(visibleStudies);
   dialog.querySelectorAll(".copy-citation").forEach(button => button.addEventListener("click", () => copyStudyCitation(visibleStudies[Number(button.dataset.citation)],button.dataset.style,button)));
   if (syncUrl) history.pushState({record:item.id}, "", recordUrl(item));
@@ -1153,24 +1200,30 @@ function openDetail(id, syncUrl = true) {
 
 function exportRecord(item, action = "share") {
   const en = state.lang === "en";
+  const studies = localizedStudies(item);
+  const primaryStudy = studies[0];
   const winAnsi = value => String(value || "").normalize("NFC").replace(/[–—]/g,"-").replace(/[“”]/g,'"').replace(/[‘’]/g,"'").replace(/[^\x20-\xFF]/g," ").replace(/[\\()]/g,"\\$&");
   const wrap = (value, width = 78) => winAnsi(value).split(/\s+/).reduce((lines, word) => { const last = lines.at(-1); if (!last || `${last} ${word}`.length > width) lines.push(word); else lines[lines.length - 1] = `${last} ${word}`; return lines; }, []);
   const rows = [
     {role:"title", text:`${item.genus} ${item.species} ${item.strain}`},
     ...wrap(localize(item,"condition"), 64).map(text=>({role:"subtitle",text})), {role:"space"},
+    {role:"section", text:en?"PRIMARY RESULT":"RESULTADO PRINCIPAL"},
+    ...wrap(reportedResult(item),72).map(text=>({role:"key",text})),
+    ...(primaryStudy ? [{role:"study",text:`${en?"Study type":"Tipo de estudio"}: ${studyDesignLabel(primaryStudy.design)} · ${neutralClinicalText(primaryStudy.n)} · ${primaryStudy.year}`}] : []),
+    {role:"space"},
     {role:"section", text:en?"STUDY REGIMEN":"PAUTA ESTUDIADA"},
     ...wrap(`${en?"Dose":"Dosis"}: ${localize(item,"dose")}`, 72).map(text=>({role:"key",text})),
     ...wrap(`${en?"Duration":"Duración"}: ${localize(item,"duration")}`, 72).map(text=>({role:"key",text})),
     ...wrap(`${en?"Outcome":"Desenlace"}: ${localize(item,"outcome")}`, 72).map(text=>({role:"key",text})),
-    {role:"space"}, {role:"section", text:en?"LINKED STUDIES":"ESTUDIOS VINCULADOS"}
+    {role:"space"}, {role:"section", text:en?"OTHER REPORTED RESULTS":"OTROS RESULTADOS REPORTADOS"}
   ];
-  localizedStudies(item).forEach(study => {
-    rows.push({role:"study",text:`${study.design} · ${study.year}`});
-    wrap(study.result).forEach(text=>rows.push({role:"body",text}));
+  studies.slice(1).forEach(study => {
+    rows.push({role:"study",text:`${studyDesignLabel(study.design)} · ${neutralClinicalText(study.n)} · ${study.year}`});
+    wrap(neutralClinicalText(study.result)).forEach(text=>rows.push({role:"body",text}));
     wrap(study.url, 82).forEach(text=>rows.push({role:"link",text}));
     rows.push({role:"space"});
   });
-  rows.push({role:"section",text:en?"EDITORIAL NOTE":"NOTA EDITORIAL"}, ...wrap(en?"ProbioIndex presents published study data without a clinical recommendation.":"ProbioIndex presenta datos publicados sin una recomendación clínica.").map(text=>({role:"note",text})));
+  if (studies.length === 1) rows.push({role:"body",text:en?"No additional results linked to this record.":"No hay resultados adicionales vinculados a esta ficha."});
   const pages = []; let page = [], used = 0;
   rows.forEach(row => { const height = row.role === "title" ? 32 : row.role === "section" ? 25 : row.role === "space" ? 8 : row.role === "key" ? 19 : 15; if (used + height > 600 && page.length) { pages.push(page); page=[]; used=0; } page.push(row); used += height; }); if (page.length) pages.push(page);
   const command = (font,size,color,x,y,text) => `${color} rg BT /${font} ${size} Tf ${x} ${y} Td (${winAnsi(text)}) Tj ET`;

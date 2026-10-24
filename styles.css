@@ -232,6 +232,13 @@ dialog::backdrop { background: rgba(2,10,14,.62); backdrop-filter: blur(3px); }
 .section-kicker, .summary-heading span { display:block; color:var(--muted); font-size:11px; font-weight:800; letter-spacing:.09em; text-transform:uppercase; }
 .clinical-callout p { margin: 7px 0 0; color:var(--ink); font:600 16px/1.45 Sora,sans-serif; letter-spacing:-.02em; }
 .clinical-callout small { display: block; color: var(--muted); font-size: 12px; margin-top: 9px; }
+.primary-study-card { display:flex; align-items:center; gap:12px; margin:0 0 18px; padding:15px 17px; border:1px solid #D9DDEA; border-radius:12px; background:#F6F7EF; }
+.primary-study-card > div { display:grid; gap:3px; margin-right:auto; }
+.primary-study-card small { color:#5B6388; font-size:10px; font-weight:800; letter-spacing:.08em; }
+.primary-study-card strong { color:#08114E; font:600 14px/1.3 Sora,sans-serif; }
+.primary-study-card span:not(.citation-actions) { color:#5B6388; font-size:12px; }
+.primary-study-card > a { color:#08114E; font-size:12px; font-weight:800; text-decoration:none; white-space:nowrap; }
+.demo-banner[hidden] { display:none !important; }
 .effect-panel { display: grid; grid-template-columns: 1.15fr 1fr .8fr; gap: 1px; margin: 0 0 14px; overflow: hidden; border: 1px solid #cfe1df; border-radius: 12px; background: #cfe1df; }
 .effect-panel div { background: #f2fbf9; padding: 15px; }
 .effect-panel small { display: block; color: #58726f; font-size: 10px; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px; }
@@ -800,12 +807,14 @@ footer { background: #F6F7EF; border-top-color: #D9DDEA; }
     display: grid;
     grid-template-columns: minmax(0, 1fr) 330px;
     grid-template-areas:
-      "callout micro"
-      "effects micro"
+      "callout callout"
+      "effects effects"
+      "studytype micro"
       "snapshot micro"
-      "studies regimen"
-      "precautions update"
-      "adverse .";
+      "regimen micro"
+      "studies studies"
+      "precautions adverse"
+      "update update";
     column-gap: 30px;
     row-gap: 18px;
     align-items: start;
@@ -820,6 +829,7 @@ footer { background: #F6F7EF; border-top-color: #D9DDEA; }
   #detailDialog .clinical-callout small { font-size: 13px; line-height: 1.5; }
   #detailDialog .section-kicker { font-size: 12px; }
   #detailDialog .effect-panel { grid-area: effects; margin: 0; }
+  #detailDialog .primary-study-card { grid-area: studytype; margin:0; }
   #detailDialog .micrograph-panel {
     grid-area: micro;
     grid-template-columns: 1fr;
@@ -858,6 +868,8 @@ footer { background: #F6F7EF; border-top-color: #D9DDEA; }
 
 @media (max-width: 900px) {
   #detailDialog.detail-dialog { margin: 0 0 0 auto; width: min(680px, 100%); height: 100%; max-height: 100%; border-radius: 0; }
+  .primary-study-card { flex-wrap:wrap; }
+  .primary-study-card > div { flex:1 1 100%; }
 }
 
 /* Comparador y biblioteca v0.15 */
@@ -969,7 +981,7 @@ footer { background: #F6F7EF; border-top-color: #D9DDEA; }
 .hero-index .hero-logo b { font-weight:800; }
 .hero-index .hero-logo strong { font-weight:500; }
 .hero-index .hero-brand-mark { width:78px; height:78px; gap:8px; }
-.hero-index .hero-brand-mark i { width:12px; background:#08114E; }
+.hero-index .hero-brand-mark i { display:block; width:12px; background:#08114E; }
 .hero-index .hero-brand-mark i:nth-child(1) { height:38px; opacity:.58; }
 .hero-index .hero-brand-mark i:nth-child(2) { height:65px; }
 .hero-index .hero-brand-mark i:nth-child(3) { height:48px; opacity:.82; }
