@@ -25,6 +25,7 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
+.visually-hidden { position:absolute !important; width:1px !important; height:1px !important; padding:0 !important; margin:-1px !important; overflow:hidden !important; clip:rect(0,0,0,0) !important; white-space:nowrap !important; border:0 !important; }
 .auth-pending body > header,
 .auth-pending body > main,
 .auth-pending body > footer { visibility: hidden; }
@@ -676,6 +677,7 @@ body { color: #08114E; background: #FAFAF7; }
 h1 { color: #fff; }
 .lede { color: #EDF0CF; }
 .hero-index { color: #08114E; background: #BCC776; box-shadow: 0 16px 32px rgba(3,8,41,.32); }
+.hero-bacterium { width:82px; height:82px; color:#08114E; fill:none; stroke:currentColor; stroke-width:1.75; stroke-linecap:round; stroke-linejoin:round; }
 
 .search-shell { background: #fff; border-color: #D9DDEA; box-shadow: 0 22px 55px rgba(8,17,78,.16); }
 .mode-switch { background: #F1F2E9; border-bottom-color: #DCE0E6; }
@@ -992,8 +994,7 @@ footer { background: #F6F7EF; border-top-color: #D9DDEA; }
 @media (min-width: 721px) {
   .search-stage { min-height:0; padding-top:clamp(28px,4vw,48px); padding-bottom:30px; }
   .hero-banner { min-height:0; padding:clamp(28px,3.4vw,42px); }
-  .hero-banner h1 { font-size:clamp(38px,4vw,50px); }
-  .hero-banner .lede { font-size:16px; }
+  .hero-banner .lede { max-width:760px; font-size:clamp(19px,1.7vw,23px); line-height:1.35; }
 }
 
 @media (max-width: 720px) { .desktop-icon-label { display:none; } }
