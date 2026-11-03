@@ -441,14 +441,16 @@ window.addEventListener("probioindex:authchange", event => {
   if (syncedLibraryUserId !== session.user.id) syncLibraryFromAccount(session);
 });
 const latestReview = {
-  date:"2026-10-24",
-  esDate:"24 oct 2026",
-  enDate:"24 Oct 2026",
+  date:"2026-11-02",
+  esDate:"2 nov 2026",
+  enDate:"2 Nov 2026",
   updatesEs:[
-    "Se reorganizaron las fichas para mostrar primero el resultado del metaanálisis o, si no existe, el ECA con mayor muestra."
+    "Se agregaron cuatro fichas clínicas de Anaerobutyricum soehngenii: tres para L2-7 y una ficha independiente para CH106.",
+    "Se incorporaron los estudios de 2020, 2022, 2024 y 2025, además de la evaluación de seguridad de EFSA de 2026."
   ],
   updatesEn:[
-    "Records were reorganized to show the meta-analysis result first or, when none exists, the RCT with the largest sample."
+    "Four Anaerobutyricum soehngenii clinical records were added: three for L2-7 and one independent record for CH106.",
+    "Studies from 2020, 2022, 2024, and 2025 were added, together with EFSA's 2026 safety assessment."
   ]
 };
 const documentaryWatchlist = [{
@@ -817,9 +819,9 @@ function applyLanguage() {
   $("#languageButton").textContent = state.lang === "en" ? "Español" : "English";
   $("#mainTitle").textContent = "ProbioIndex";
   $(".lede").textContent = state.lang === "en" ? "Updated evidence on probiotics, prebiotics, and functional foods." : "Evidencia actualizada sobre probióticos, prebióticos y alimentos funcionales.";
-  $("#reviewBannerKicker").textContent = state.lang === "en" ? "UPDATE · 24 OCT 2026" : "ACTUALIZACIÓN · 24 OCT 2026";
-  $("#reviewBannerTitle").textContent = state.lang === "en" ? "Clinical results reorganized across all records" : "Resultados clínicos reorganizados en todas las fichas";
-  $("#reviewBannerText").textContent = state.lang === "en" ? "Meta-analysis first; when none exists, the RCT with the largest sample is shown." : "Metaanálisis primero; cuando no existe, se muestra el ECA con mayor muestra.";
+  $("#reviewBannerKicker").textContent = state.lang === "en" ? "UPDATE · 2 NOV 2026" : "ACTUALIZACIÓN · 2 NOV 2026";
+  $("#reviewBannerTitle").textContent = state.lang === "en" ? "Anaerobutyricum soehngenii records added" : "Se agregaron fichas de Anaerobutyricum soehngenii";
+  $("#reviewBannerText").textContent = state.lang === "en" ? "L2-7 and CH106 are documented separately in metabolic syndrome, type 2 diabetes, and prediabetes." : "L2-7 y CH106 se documentan por separado en síndrome metabólico, diabetes tipo 2 y prediabetes.";
   $("#reviewBannerButton").innerHTML = state.lang === "en" ? 'View update <span aria-hidden="true">→</span>' : 'Ver actualización <span aria-hidden="true">→</span>';
   $("#mobileLibrary").textContent = state.lang === "en" ? "Saved and recent" : "Guardadas y recientes";
   $("#mobileChanges").textContent = state.lang === "en" ? "What’s new" : "Novedades";
